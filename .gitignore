@@ -1,0 +1,26 @@
+# Allow source and documentation only. Build outputs belong outside this repo.
+*
+!/.gitignore
+!/.gitattributes
+!/README.md
+!/LICENSE
+!/.github/
+/.github/*
+!/.github/ISSUE_TEMPLATE/
+/.github/ISSUE_TEMPLATE/*
+!/.github/ISSUE_TEMPLATE/bug_report.md
+!/build.py
+!/requirements.txt
+!/scripts/
+!/scripts/*.py
+!/scripts/*.rb
+!/src/
+/src/*
+!/src/runtime/
+!/src/runtime/*.cs
+!/src/runtime/*.mm
+!/src/launch/
+!/src/launch/strings.json
+!/tests/
+!/tests/*.py
+!/tests/*.cs
