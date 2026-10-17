@@ -131,7 +131,7 @@ If resource conversion is interrupted, run the same command to resume. Add `--re
 
 `prepare` requires an output directory that does not already exist. Choose a new `nativeOutput` path when regenerating the project.
 
-The default version is 0.7.2, build 16. Change these with `--version` and `--build-number`. Keep the same `--bundle-id` when updating an existing installation.
+The default version is 0.7.4, build 18. Change these with `--version` and `--build-number`. Keep the same `--bundle-id` when updating an existing installation.
 
 ### Build the IPA
 
@@ -144,7 +144,7 @@ python3 build.py native --work "$nativeOutput"
 The IPA and logs are under `$buildRoot`:
 
 ```text
-native/output/SilksongNative-0.7.2-unsigned.ipa
+native/output/SilksongNative-0.7.4-unsigned.ipa
 native/logs/
 ```
 
@@ -216,7 +216,7 @@ Changing the signing account or bundle identifier may prevent an update from rep
 
 ## Support and Testing
 
-Current release: **0.7.2 / build 16 test version**.
+Current release: **0.7.4 / build 18 test version**.
 
 | Item | Current scope |
 | --- | --- |
@@ -228,6 +228,11 @@ Current release: **0.7.2 / build 16 test version**.
 | Startup UI and app name | Simplified Chinese, Traditional Chinese, and English, following the system language |
 
 ## Release Notes
+
+### 0.7.4
+
+- Fixed the brief white screen at startup.
+- Added controller rumble support, preserving the original game's vibration toggle and intensity settings.
 
 ### 0.7.2
 

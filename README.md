@@ -131,7 +131,7 @@ python3 build.py prepare --game-data "$gameData" --unity-data "$unityData" --inp
 
 `prepare` 需要一个尚不存在的输出目录。重新生成工程时，换一个 `nativeOutput` 路径。
 
-默认版本为 0.7.2、构建号 16，可用 `--version` 和 `--build-number` 修改。覆盖更新时，沿用原来的 `--bundle-id`。
+默认版本为 0.7.4、构建号 18，可用 `--version` 和 `--build-number` 修改。覆盖更新时，沿用原来的 `--bundle-id`。
 
 ### 编译 IPA
 
@@ -144,7 +144,7 @@ python3 build.py native --work "$nativeOutput"
 IPA 和日志位于 `$buildRoot` 下：
 
 ```text
-native/output/SilksongNative-0.7.2-unsigned.ipa
+native/output/SilksongNative-0.7.4-unsigned.ipa
 native/logs/
 ```
 
@@ -216,7 +216,7 @@ Documents/
 
 ## 支持与测试范围
 
-当前为 **0.7.2 / build 16 测试版**。
+当前为 **0.7.4 / build 18 测试版**。
 
 | 项目 | 当前范围 |
 | --- | --- |
@@ -228,6 +228,11 @@ Documents/
 | 启动页与应用名称 | 简体中文、繁体中文、英文，跟随系统语言 |
 
 ## 更新说明
+
+### 0.7.4
+
+- 修复启动时短暂白屏的问题。
+- 适配手柄震动，保留原游戏的震动开关和强度设置。
 
 ### 0.7.2
 
