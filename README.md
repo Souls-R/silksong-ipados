@@ -1,5 +1,7 @@
 # Silksong iPadOS
 
+简体中文 · [English](README_EN.md)
+
 《Hollow Knight: Silksong》非官方 iOS 构建工具。
 
 与模拟器或兼容层等方案不同，我们可以直接通过 Unity IL2CPP 将游戏原版的托管程序集的 IL 中间代码转换为 C++，再编译生成 ARM64 机器码，配合 Unity 的 iOS 原生运行时执行。
