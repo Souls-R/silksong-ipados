@@ -27,7 +27,7 @@ Run any command with `--help` to see its options.
 
 ## Features
 
-- iOS controller and external keyboard support.
+- iOS controller, external keyboard, and mouse support.
 - Original graphics and frame rate settings, with support for the iPad's aspect ratio.
 - General Animator binding fixes for animation issues.
 - Logging and Metal performance overlay options in system Settings.
@@ -131,7 +131,7 @@ If resource conversion is interrupted, run the same command to resume. Add `--re
 
 `prepare` requires an output directory that does not already exist. Choose a new `nativeOutput` path when regenerating the project.
 
-The default version is 0.7.4, build 18. Change these with `--version` and `--build-number`. Keep the same `--bundle-id` when updating an existing installation.
+The default version is 0.7.9, build 23. Change these with `--version` and `--build-number`. Keep the same `--bundle-id` when updating an existing installation.
 
 ### Build the IPA
 
@@ -144,7 +144,7 @@ python3 build.py native --work "$nativeOutput"
 The IPA and logs are under `$buildRoot`:
 
 ```text
-native/output/SilksongNative-0.7.4-unsigned.ipa
+native/output/SilksongNative-0.7.9-unsigned.ipa
 native/logs/
 ```
 
@@ -216,7 +216,7 @@ Changing the signing account or bundle identifier may prevent an update from rep
 
 ## Support and Testing
 
-Current release: **0.7.4 / build 18 test version**.
+Current release: **0.7.9 / build 23 test version**.
 
 | Item | Current scope |
 | --- | --- |
@@ -224,10 +224,18 @@ Current release: **0.7.4 / build 18 test version**.
 | Build environment | Apple Silicon Mac, Unity 6000.0.50f1, Python 3.12, Xcode |
 | System requirements | Minimum build target: iOS / iPadOS 18.0 |
 | Tested device | iPad Pro 11-inch (2021, M1) |
-| Controls | External keyboard or controller for gameplay; partial touch support |
+| Controls | External keyboard or controller for gameplay, with mouse button binding; partial touch support |
 | Startup UI and app name | Simplified Chinese, Traditional Chinese, and English, following the system language |
 
+Before using a mouse, turn off **Settings → Accessibility → Touch → AssistiveTouch** on your iPad to prevent left clicks from being converted into screen taps.
+
 ## Release Notes
+
+### 0.7.9
+
+- Added mouse menu clicks and in-game button binding.
+- Fixed missed mouse button releases and unintended menu clicks after rebinding.
+- Fixed the Chinese font used by the binding prompt.
 
 ### 0.7.4
 

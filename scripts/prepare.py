@@ -189,8 +189,9 @@ def prepare(args):
     shutil.copytree(output / 'metadata', data / 'Managed')
     shutil.copytree(resources / 'program/Raw', data / 'Raw')
     write_json(data / 'Raw/native-resource-index.json', contract)
-    for source in (REPO / 'src/runtime').glob('*.mm'):
-        shutil.copyfile(source, project / 'Libraries' / source.name)
+    for source in (REPO / 'src/runtime').iterdir():
+        if source.suffix in ('.mm', '.h'):
+            shutil.copyfile(source, project / 'Libraries' / source.name)
     notices = data / 'ThirdPartyNotices'
     notices.mkdir()
     shutil.copyfile(package / 'LICENSE.md', notices / 'Unity-InputSystem-LICENSE.md')
@@ -206,6 +207,8 @@ def prepare(args):
                 UISupportedInterfaceOrientations=['UIInterfaceOrientationLandscapeLeft',
                                                   'UIInterfaceOrientationLandscapeRight'])
     info_path.write_bytes(plistlib.dumps(info))
+    from .mouse import configure_mouse
+    configure_mouse(project)
     from .launch import configure
     configure(project, game, args.diagnostics, args.metal_hud)
     manifest = dict(schema=1, unity=UNITY_VERSION, bundle_id=args.bundle_id, app_name=args.app_name,

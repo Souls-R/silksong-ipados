@@ -12,6 +12,15 @@ from scripts.common import REPO
 
 
 class RuntimeResourceStore(unittest.TestCase):
+    def test_mouse_menu_and_real_finger_input(self):
+        self.run_csharp(['src/runtime/NativeMouseUI.cs', 'src/runtime/NativeBindingPointerGate.cs', 'tests/MouseUITests.cs'])
+
+    def test_binding_release_cannot_reopen_capture(self):
+        self.run_csharp(['src/runtime/NativeBindingPointerGate.cs', 'tests/BindingPointerGateTests.cs'])
+
+    def test_native_mouse_button_snapshots_and_lifecycle(self):
+        self.run_csharp(['src/runtime/NativeMouseProvider.cs', 'tests/MouseProviderTests.cs'])
+
     def test_runtime_resource_compatibility_files_and_cache(self):
         self.run_csharp(['src/runtime/NativeResourceStore.cs', 'tests/ResourceStoreTests.cs'])
 

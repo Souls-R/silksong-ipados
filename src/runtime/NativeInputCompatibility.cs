@@ -12,6 +12,7 @@ using InputDeviceMatcher = UnityEngine.InputSystem.Layouts.InputDeviceMatcher;
 public static class NativeInputCompatibility
 {
     static NativeKeyboardProvider keyboard;
+    static NativeMouseProvider mouse;
 
     public static void Install()
     {
@@ -26,7 +27,9 @@ public static class NativeInputCompatibility
         InputSystem.onDeviceChange += DeviceChanged;
         foreach (var device in InputSystem.devices) Describe(device, "present");
         InputManager.OnSetupCompleted += SetupKeyboard;
+        InputManager.OnSetupCompleted += SetupMouse;
         if (InputManager.IsSetup) SetupKeyboard();
+        if (InputManager.IsSetup) SetupMouse();
         if (NativePreferences.CompatibilityLogs) Debug.Log("NATIVE_INPUT: iOS gamepad layouts registered; dynamic input update");
     }
 
@@ -55,6 +58,20 @@ public static class NativeInputCompatibility
             if (NativePreferences.CompatibilityLogs) Debug.Log("NATIVE_INPUT: Hardware keyboard state provider installed");
         }
         catch (Exception ex) { Debug.LogError("NATIVE_INPUT: Keyboard provider setup failed: " + ex); }
+    }
+
+    static void SetupMouse()
+    {
+        if (mouse != null && ReferenceEquals(InputManager.MouseProvider, mouse)) return;
+        try
+        {
+            mouse = new NativeMouseProvider(InputManager.MouseProvider);
+            typeof(InputManager).GetProperty("MouseProvider", BindingFlags.Public | BindingFlags.Static).SetValue(null, mouse, null);
+            if (!ReferenceEquals(InputManager.MouseProvider, mouse)) throw new Exception("Mouse provider was not installed");
+            mouse.Setup();
+            if (NativePreferences.CompatibilityLogs) Debug.Log("NATIVE_INPUT: Hardware mouse button provider installed");
+        }
+        catch (Exception ex) { Debug.LogError("NATIVE_INPUT: Mouse provider setup failed: " + ex); }
     }
 
     sealed class NativeKeyboardProvider : IKeyboardProvider

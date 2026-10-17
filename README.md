@@ -27,7 +27,7 @@ python3 build.py resource-zip   打包资源 ZIP
 
 ## 功能
 
-- iOS 手柄与外接键盘。
+- iOS 手柄、外接键盘与鼠标。
 - 原版画质菜单、帧率选项和 iPad 画幅适配。
 - 修复了部分动画错误，通用 Animator 绑定修复。
 - 在系统设置中配置日志记录和 Metal 性能面板选项。
@@ -131,7 +131,7 @@ python3 build.py prepare --game-data "$gameData" --unity-data "$unityData" --inp
 
 `prepare` 需要一个尚不存在的输出目录。重新生成工程时，换一个 `nativeOutput` 路径。
 
-默认版本为 0.7.4、构建号 18，可用 `--version` 和 `--build-number` 修改。覆盖更新时，沿用原来的 `--bundle-id`。
+默认版本为 0.7.9、构建号 23，可用 `--version` 和 `--build-number` 修改。覆盖更新时，沿用原来的 `--bundle-id`。
 
 ### 编译 IPA
 
@@ -144,7 +144,7 @@ python3 build.py native --work "$nativeOutput"
 IPA 和日志位于 `$buildRoot` 下：
 
 ```text
-native/output/SilksongNative-0.7.4-unsigned.ipa
+native/output/SilksongNative-0.7.9-unsigned.ipa
 native/logs/
 ```
 
@@ -216,7 +216,7 @@ Documents/
 
 ## 支持与测试范围
 
-当前为 **0.7.4 / build 18 测试版**。
+当前为 **0.7.9 / build 23 测试版**。
 
 | 项目 | 当前范围 |
 | --- | --- |
@@ -224,10 +224,18 @@ Documents/
 | 构建环境 | Apple Silicon Mac、Unity 6000.0.50f1、Python 3.12、Xcode |
 | 系统要求 | 构建最低目标为 iOS / iPadOS 18.0 |
 | 实测设备 | iPad Pro 11 英寸（2021，M1） |
-| 操作方式 | 游戏内使用外接键盘或手柄；部分支持触控 |
+| 操作方式 | 游戏内使用外接键盘或手柄，支持鼠标按键绑定；部分支持触控 |
 | 启动页与应用名称 | 简体中文、繁体中文、英文，跟随系统语言 |
 
+使用鼠标前，请关闭 iPad「设置 → 辅助功能 → 触控 → 辅助触控」，避免左键被系统转换为触屏点击。
+
 ## 更新说明
+
+### 0.7.9
+
+- 支持鼠标菜单点击和游戏内按键绑定。
+- 修复鼠标松开事件丢失、绑定后误触菜单的问题。
+- 修复绑定提示的中文字体显示。
 
 ### 0.7.4
 

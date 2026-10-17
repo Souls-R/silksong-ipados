@@ -20,8 +20,10 @@
 !/src/runtime/
 !/src/runtime/*.cs
 !/src/runtime/*.mm
+!/src/runtime/*.h
 !/src/launch/
 !/src/launch/strings.json
 !/tests/
 !/tests/*.py
 !/tests/*.cs
+!/tests/*.cpp
