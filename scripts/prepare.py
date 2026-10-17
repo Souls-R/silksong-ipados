@@ -205,8 +205,6 @@ def prepare(args):
                 LSSupportsOpeningDocumentsInPlace=True, UIRequiresFullScreen=True,
                 UISupportedInterfaceOrientations=['UIInterfaceOrientationLandscapeLeft',
                                                   'UIInterfaceOrientationLandscapeRight'])
-    info.pop('UILaunchStoryboardName', None)
-    info['UILaunchScreen'] = {}
     info_path.write_bytes(plistlib.dumps(info))
     from .launch import configure
     configure(project, game, args.diagnostics, args.metal_hud)

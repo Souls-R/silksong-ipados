@@ -51,6 +51,27 @@ def strings_file(values):
                      json.dumps(value, ensure_ascii=False) + ';' for key, value in values.items()) + '\n'
 
 
+def configure_launch_screen(project):
+    # The system displays this before Unity or NativeLaunchView exists.
+    # An empty UILaunchScreen falls back to white in light appearance.
+    name = 'NativeLaunchBackground'
+    colors = project / 'NativeIcons.xcassets' / (name + '.colorset')
+    colors.mkdir(parents=True, exist_ok=True)
+    write_json(colors / 'Contents.json', {
+        'info': {'version': 1, 'author': 'xcode'},
+        'colors': [{'idiom': 'universal', 'color': {
+            'color-space': 'srgb',
+            'components': {'red': '0.000', 'green': '0.000', 'blue': '0.000', 'alpha': '1.000'},
+        }}],
+    })
+    info_path = project / 'Info.plist'
+    info = plistlib.loads(info_path.read_bytes())
+    for key in ('UILaunchStoryboardName', 'UILaunchStoryboardName~ipad', 'UILaunchScreens'):
+        info.pop(key, None)
+    info['UILaunchScreen'] = {'UIColorName': name}
+    info_path.write_bytes(plistlib.dumps(info))
+
+
 def configure(project, game, diagnostics=False, metal_hud=False):
     data = project / 'Data/Raw/native-launch'
     data.mkdir(parents=True)
@@ -71,6 +92,7 @@ def configure(project, game, diagnostics=False, metal_hud=False):
             icon.resize((int(size * scale),) * 2, Image.Resampling.LANCZOS).save(icons / name)
             images.append(dict(idiom=idiom, size=f'{size}x{size}', scale=f'{scale}x', filename=name))
     write_json(icons / 'Contents.json', dict(images=images, info={'version': 1, 'author': 'xcode'}))
+    configure_launch_screen(project)
     settings = project / 'Settings.bundle'
     settings.mkdir()
     specifiers = [dict(Type='PSGroupSpecifier', Title='sectionLaunch', FooterText='settingNoticeHelp')]
