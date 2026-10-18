@@ -17,7 +17,7 @@ p.files.select { |f| f.path == 'libGameAssembly.a' }.each do |f|
 end
 p.build_configurations.each do |c|
   c.build_settings['PRODUCT_NAME_APP'] = 'Unity-iPhone'
-  c.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '18.0'
+  c.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '16.0'
   c.build_settings['ENABLE_BITCODE'] = 'NO'
 end
 p.targets.each do |t|
@@ -25,7 +25,7 @@ p.targets.each do |t|
     b = c.build_settings
     b['CODE_SIGNING_ALLOWED'] = 'NO'
     b['CODE_SIGNING_REQUIRED'] = 'NO'
-    b['IPHONEOS_DEPLOYMENT_TARGET'] = '18.0'
+    b['IPHONEOS_DEPLOYMENT_TARGET'] = '16.0'
     b['ARCHS'] = 'arm64'
     b['ENABLE_USER_SCRIPT_SANDBOXING'] = 'NO'
     b['GCC_PREPROCESSOR_DEFINITIONS'] = ['$(inherited)','UNITY_VERSION_VER=6000','UNITY_VERSION_MAJ=0','UNITY_VERSION_MIN=50']
