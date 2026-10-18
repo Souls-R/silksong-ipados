@@ -28,7 +28,7 @@ Run any command with `--help` to see its options.
 ## Features
 
 - iOS controller, external keyboard, and mouse support.
-- On-screen gamepad that reports controller input instead of keyboard input, so it never clashes with key bindings.
+- On-screen gamepad that reports controller input instead of keyboard input, so it never clashes with key bindings; positions can be dragged into place on the notice page.
 - Original graphics and frame rate settings, with support for the iPad's aspect ratio.
 - General Animator binding fixes for animation issues.
 - Logging and Metal performance overlay options in system Settings.
@@ -192,11 +192,13 @@ After installation, open Hollow Knight: Silksong in iPadOS Settings (under Apps 
 - Diagnostic Logs: write resource loading and other logs to a file.
 - Performance Overlay: show frame rate, frame time, and GPU time.
 - Show Startup Details: display diagnostic text on screen.
-- On-Screen Gamepad: show on-screen gamepad controls, set to Auto, Always On, or Always Off.
+- On-Screen Gamepad: show on-screen gamepad controls, set to Auto, Always On, or Always Off, with positions adjusted on the notice page.
 
 The notice is shown by default. Set “On Next Launch” to “Go Straight to Game” on the notice page to skip it. Logs and the performance overlay are off by default.
 
 The on-screen gamepad defaults to Auto: it appears when you touch the screen during gameplay and hides as soon as an external keyboard, controller, or mouse reports input. The notice page changes it directly, and the choice survives restarts.
+
+Select Adjust Button Positions on the notice page to drag each control and the stick into place; positions save on release and apply immediately, and Reset restores the default layout.
 
 To troubleshoot, enable Diagnostic Logs, restart the app, reproduce the issue, and export `native.log` from the app's Documents folder.
 

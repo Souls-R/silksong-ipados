@@ -46,6 +46,7 @@ static UIFont* MenuFont(CGFloat size)
 @property(nonatomic, strong) UILabel* nextValue;
 @property(nonatomic, strong) UIButton* padChoice;
 @property(nonatomic, strong) UILabel* padValue;
+@property(nonatomic, strong) UIButton* padEdit;
 @property(nonatomic, strong) UIImageView* leftCursor;
 @property(nonatomic, strong) UIImageView* rightCursor;
 @property(nonatomic, strong) CADisplayLink* controllerPoll;
@@ -167,6 +168,7 @@ static NativeLaunchView* LaunchView;
     self.nextValue = nil;
     self.padChoice = nil;
     self.padValue = nil;
+    self.padEdit = nil;
     self.selection = 0;
     for (UIView* view in self.canvas.subviews) [view removeFromSuperview];
     for (CALayer* layer in [self.canvas.layer.sublayers copy]) [layer removeFromSuperlayer];
@@ -200,10 +202,11 @@ static NativeLaunchView* LaunchView;
         self.padValue.textAlignment = NSTextAlignmentRight;
         [self.padChoice addSubview:self.padValue];
         [self syncPad];
-        [self label:Text(@"noticeHelp") frame:CGRectMake(117, 646, 960, 40) size:15 color:[UIColor colorWithWhite:.65 alpha:1]];
-        UIButton* home = [self button:Text(@"projectHome") y:690 action:@selector(home:)];
+        self.padEdit = [self button:Text(@"padEdit") y:652 action:@selector(editPad:)];
+        [self label:Text(@"noticeHelp") frame:CGRectMake(117, 706, 960, 40) size:15 color:[UIColor colorWithWhite:.65 alpha:1]];
+        UIButton* home = [self button:Text(@"projectHome") y:750 action:@selector(home:)];
         home.titleLabel.font = MenuFont(16);
-        self.choices = @[enter, self.nextLaunch, self.padChoice, home];
+        self.choices = @[enter, self.nextLaunch, self.padChoice, self.padEdit, home];
     } else {
         [self title:Text(page == 2 ? @"missingTitle" : (page == 6 ? @"startupErrorTitle" : @"loadErrorTitle")) y:122];
         NSString* introduction = [NSString stringWithFormat:@"%@\n%@", Text(@"missingIntro"), Text(@"missingInstruction")];
@@ -243,6 +246,8 @@ static NativeLaunchView* LaunchView;
 }
 - (void)key:(UIKeyCommand*)command
 {
+    // The pad editor covers the page, so nothing behind it may react to keys.
+    if (NativeVirtualPad_Editing()) return;
     if ([command.input isEqualToString:UIKeyInputUpArrow]) [self selectItemAtIndex:self.selection - 1];
     else if ([command.input isEqualToString:UIKeyInputDownArrow]) [self selectItemAtIndex:self.selection + 1];
     else if ([command.input isEqualToString:UIKeyInputLeftArrow] || [command.input isEqualToString:UIKeyInputRightArrow]) {
@@ -266,7 +271,9 @@ static NativeLaunchView* LaunchView;
 - (void)pollController:(CADisplayLink*)sender
 {
     unsigned current = [self controllerButtons];
-    unsigned pressed = current & ~self.previousButtons;
+    // The pad editor covers the page; inputs it swallows must not queue up and
+    // fire the moment the player leaves it.
+    unsigned pressed = NativeVirtualPad_Editing() ? 0 : current & ~self.previousButtons;
     self.previousButtons = current;
     if (pressed & 1) [self selectItemAtIndex:self.selection - 1];
     if (pressed & 2) [self selectItemAtIndex:self.selection + 1];
@@ -276,21 +283,35 @@ static NativeLaunchView* LaunchView;
     }
     if ((pressed & 8) && self.choices.count) [self.choices[self.selection] sendActionsForControlEvents:UIControlEventTouchUpInside];
 }
-- (void)enter:(id)sender { LaunchAction = 1; }
-- (void)retry:(id)sender { LaunchAction = 2; }
+- (void)enter:(id)sender { if (NativeVirtualPad_Editing()) return; LaunchAction = 1; }
+- (void)retry:(id)sender { if (NativeVirtualPad_Editing()) return; LaunchAction = 2; }
 - (void)toggle:(id)sender
 {
+    if (NativeVirtualPad_Editing()) return;
     NSUserDefaults* settings = NSUserDefaults.standardUserDefaults;
     [settings setBool:![settings boolForKey:@"NativeShowNotice"] forKey:@"NativeShowNotice"];
     [self syncChoice];
 }
 - (void)pad:(id)sender
 {
+    if (NativeVirtualPad_Editing()) return;
     int mode = NativeVirtualPad_Mode();
     NativeVirtualPad_SetMode(mode >= NativeVirtualPadNever ? NativeVirtualPadAuto : mode + 1);
     [self syncPad];
 }
-- (void)home:(id)sender { [UIApplication.sharedApplication openURL:[NSURL URLWithString:ProjectURL] options:@{} completionHandler:nil]; }
+// Hands the screen to the pad's own layout editor, which positions every control
+// by dragging and remembers the result.
+- (void)editPad:(id)sender
+{
+    if (NativeVirtualPad_Editing()) return;
+    NativeVirtualPad_BeginEditing(Text(@"padEditDone").UTF8String, Text(@"padEditReset").UTF8String,
+                                  Text(@"padEditHint").UTF8String);
+}
+- (void)home:(id)sender
+{
+    if (NativeVirtualPad_Editing()) return;
+    [UIApplication.sharedApplication openURL:[NSURL URLWithString:ProjectURL] options:@{} completionHandler:nil];
+}
 - (void)stop { [self.controllerPoll invalidate]; self.controllerPoll = nil; }
 @end
 

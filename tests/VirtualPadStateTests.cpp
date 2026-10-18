@@ -46,5 +46,15 @@ int main()
     assert(fabsf(x - 0.6f) < 1e-4f && fabsf(y - 0.8f) < 1e-4f);
     NativeVirtualPadStick(0.6f, 0.8f, 0.18f, &x, &y);
     assert(fabsf(x * x + y * y - 1) < 1e-4f);
+    // A dragged control stays inside the canvas: overshoot pins to the edge, an
+    // oversize control collapses to the origin instead of going negative.
+    NativeVirtualPadClampToCanvas(-40, 900, 62, 62, 1194, 834, &x, &y);
+    assert(x == 0 && fabsf(y - 772) < 1e-5f);
+    NativeVirtualPadClampToCanvas(600.5f, 300.25f, 62, 62, 1194, 834, &x, &y);
+    assert(fabsf(x - 600.5f) < 1e-5f && fabsf(y - 300.25f) < 1e-5f);
+    NativeVirtualPadClampToCanvas(1180, 830, 200, 200, 1194, 834, &x, &y);
+    assert(fabsf(x - 994) < 1e-5f && fabsf(y - 634) < 1e-5f);
+    NativeVirtualPadClampToCanvas(10, 10, 1400, 900, 1194, 834, &x, &y);
+    assert(x == 0 && y == 0);
     std::cout << "PASS: gamepad bit table, three display modes, stick dead zone and remapping\n";
 }
