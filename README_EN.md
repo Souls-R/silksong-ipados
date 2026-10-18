@@ -184,7 +184,7 @@ Documents/
 
 ### Performance and Diagnostics
 
-After installation, open iPadOS Settings → Apps → Hollow Knight: Silksong to adjust these options. Close the app from the app switcher and reopen it for changes to take effect:
+After installation, open Hollow Knight: Silksong in iPadOS Settings (under Apps on iPadOS 18 and later) to adjust these options. Close the app from the app switcher and reopen it for changes to take effect:
 
 - Show Notice: show the notice every time the game starts.
 - Check Resources on Next Launch: use after importing new resources or when troubleshooting.
@@ -224,12 +224,17 @@ Current release: **0.7.9 / build 23 test version**.
 | Build environment | Apple Silicon Mac, Unity 6000.0.50f1, Python 3.12, Xcode |
 | System requirements | Minimum build target: iOS / iPadOS 16.0 |
 | Tested device | iPad Pro 11-inch (2021, M1) |
+| iPadOS 16 testing | iPad with M2 and 8 GB RAM; reported working with an IPA rebuilt from [PR #1](https://github.com/Souls-R/silksong-ipados/pull/1) |
 | Controls | External keyboard or controller for gameplay, with mouse button binding; partial touch support |
 | Startup UI and app name | Simplified Chinese, Traditional Chinese, and English, following the system language |
 
 Before using a mouse, turn off **Settings → Accessibility → Touch → AssistiveTouch** on your iPad to prevent left clicks from being converted into screen taps.
 
 ## Release Notes
+
+### Unreleased
+
+- Lowered the minimum deployment target to iOS / iPadOS 16.0.
 
 ### 0.7.9
 
