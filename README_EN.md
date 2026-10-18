@@ -222,7 +222,7 @@ Current release: **0.7.9 / build 23 test version**.
 | --- | --- |
 | Game files | Steam macOS release 1.0.30000 |
 | Build environment | Apple Silicon Mac, Unity 6000.0.50f1, Python 3.12, Xcode |
-| System requirements | Minimum build target: iOS / iPadOS 18.0 |
+| System requirements | Minimum build target: iOS / iPadOS 16.0 |
 | Tested device | iPad Pro 11-inch (2021, M1) |
 | Controls | External keyboard or controller for gameplay, with mouse button binding; partial touch support |
 | Startup UI and app name | Simplified Chinese, Traditional Chinese, and English, following the system language |
