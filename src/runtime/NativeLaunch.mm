@@ -3,6 +3,7 @@
 #import <GameController/GameController.h>
 #import <QuartzCore/QuartzCore.h>
 #include <math.h>
+#include "NativeVirtualPad.h"
 
 extern "C" UIView* UnityGetGLView();
 
@@ -43,6 +44,8 @@ static UIFont* MenuFont(CGFloat size)
 @property(nonatomic, strong) NSArray<UIButton*>* choices;
 @property(nonatomic, strong) UIButton* nextLaunch;
 @property(nonatomic, strong) UILabel* nextValue;
+@property(nonatomic, strong) UIButton* padChoice;
+@property(nonatomic, strong) UILabel* padValue;
 @property(nonatomic, strong) UIImageView* leftCursor;
 @property(nonatomic, strong) UIImageView* rightCursor;
 @property(nonatomic, strong) CADisplayLink* controllerPoll;
@@ -147,12 +150,23 @@ static NativeLaunchView* LaunchView;
     self.nextLaunch.accessibilityLabel = Text(@"nextLaunch");
     self.nextLaunch.accessibilityValue = self.nextValue.text;
 }
+- (void)syncPad
+{
+    int mode = NativeVirtualPad_Mode();
+    self.padValue.text = Text(mode == NativeVirtualPadAlways ? @"settingPadAlways" :
+        (mode == NativeVirtualPadNever ? @"settingPadNever" : @"settingPadAuto"));
+    self.padChoice.accessibilityLabel = Text(@"settingVirtualPad");
+    self.padChoice.accessibilityValue = self.padValue.text;
+}
 - (void)showPage:(int)page detail:(NSString*)detail
 {
     [self stop];
+    NativeVirtualPad_Detach();
     self.page = page;
     self.nextLaunch = nil;
     self.nextValue = nil;
+    self.padChoice = nil;
+    self.padValue = nil;
     self.selection = 0;
     for (UIView* view in self.canvas.subviews) [view removeFromSuperview];
     for (CALayer* layer in [self.canvas.layer.sublayers copy]) [layer removeFromSuperlayer];
@@ -177,10 +191,19 @@ static NativeLaunchView* LaunchView;
         self.nextValue.textAlignment = NSTextAlignmentRight;
         [self.nextLaunch addSubview:self.nextValue];
         [self syncChoice];
-        [self label:Text(@"noticeHelp") frame:CGRectMake(117, 598, 960, 40) size:15 color:[UIColor colorWithWhite:.65 alpha:1]];
-        UIButton* home = [self button:Text(@"projectHome") y:650 action:@selector(home:)];
+        self.padChoice = [self button:@"" y:589 action:@selector(pad:)];
+        UILabel* padLabel = [[UILabel alloc] initWithFrame:CGRectMake(25, 0, 250, 54)];
+        padLabel.font = MenuFont(22); padLabel.textColor = body; padLabel.text = Text(@"settingVirtualPad");
+        [self.padChoice addSubview:padLabel];
+        self.padValue = [[UILabel alloc] initWithFrame:CGRectMake(255, 0, 280, 54)];
+        self.padValue.font = MenuFont(22); self.padValue.textColor = body;
+        self.padValue.textAlignment = NSTextAlignmentRight;
+        [self.padChoice addSubview:self.padValue];
+        [self syncPad];
+        [self label:Text(@"noticeHelp") frame:CGRectMake(117, 646, 960, 40) size:15 color:[UIColor colorWithWhite:.65 alpha:1]];
+        UIButton* home = [self button:Text(@"projectHome") y:690 action:@selector(home:)];
         home.titleLabel.font = MenuFont(16);
-        self.choices = @[enter, self.nextLaunch, home];
+        self.choices = @[enter, self.nextLaunch, self.padChoice, home];
     } else {
         [self title:Text(page == 2 ? @"missingTitle" : (page == 6 ? @"startupErrorTitle" : @"loadErrorTitle")) y:122];
         NSString* introduction = [NSString stringWithFormat:@"%@\n%@", Text(@"missingIntro"), Text(@"missingInstruction")];
@@ -224,6 +247,7 @@ static NativeLaunchView* LaunchView;
     else if ([command.input isEqualToString:UIKeyInputDownArrow]) [self selectItemAtIndex:self.selection + 1];
     else if ([command.input isEqualToString:UIKeyInputLeftArrow] || [command.input isEqualToString:UIKeyInputRightArrow]) {
         if (self.choices.count && self.choices[self.selection] == self.nextLaunch) [self toggle:nil];
+        else if (self.choices.count && self.choices[self.selection] == self.padChoice) [self pad:nil];
     } else if (self.choices.count) [self.choices[self.selection] sendActionsForControlEvents:UIControlEventTouchUpInside];
 }
 - (unsigned)controllerButtons
@@ -246,7 +270,10 @@ static NativeLaunchView* LaunchView;
     self.previousButtons = current;
     if (pressed & 1) [self selectItemAtIndex:self.selection - 1];
     if (pressed & 2) [self selectItemAtIndex:self.selection + 1];
-    if ((pressed & 4) && self.choices.count && self.choices[self.selection] == self.nextLaunch) [self toggle:nil];
+    if (pressed & 4) {
+        if (self.choices.count && self.choices[self.selection] == self.nextLaunch) [self toggle:nil];
+        else if (self.choices.count && self.choices[self.selection] == self.padChoice) [self pad:nil];
+    }
     if ((pressed & 8) && self.choices.count) [self.choices[self.selection] sendActionsForControlEvents:UIControlEventTouchUpInside];
 }
 - (void)enter:(id)sender { LaunchAction = 1; }
@@ -256,6 +283,12 @@ static NativeLaunchView* LaunchView;
     NSUserDefaults* settings = NSUserDefaults.standardUserDefaults;
     [settings setBool:![settings boolForKey:@"NativeShowNotice"] forKey:@"NativeShowNotice"];
     [self syncChoice];
+}
+- (void)pad:(id)sender
+{
+    int mode = NativeVirtualPad_Mode();
+    NativeVirtualPad_SetMode(mode >= NativeVirtualPadNever ? NativeVirtualPadAuto : mode + 1);
+    [self syncPad];
 }
 - (void)home:(id)sender { [UIApplication.sharedApplication openURL:[NSURL URLWithString:ProjectURL] options:@{} completionHandler:nil]; }
 - (void)stop { [self.controllerPoll invalidate]; self.controllerPoll = nil; }
@@ -295,4 +328,6 @@ extern "C" void NativeLaunch_Hide()
     [LaunchView removeFromSuperview];
     LaunchView = nil;
     LaunchAction = 0;
+    // Gameplay is about to start: the launcher yields to the on-screen pad.
+    NativeVirtualPad_Attach();
 }

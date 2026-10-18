@@ -14,7 +14,7 @@ This project does not include any official game assets. You need to build from y
 
 You need an **Apple Silicon Mac**. Follow the [build guide](#build-your-own-ipa) to convert game resources, generate the project, compile the IPA, and sign and install it on your iPad.
 
-Touch controls are only partially supported. An external keyboard or controller is required for gameplay.
+Touch controls are only partially supported. Enable the on-screen gamepad on the notice page to play by touch, or use an external keyboard or controller.
 
 ```text
 python3 build.py resources     Convert resources
@@ -28,6 +28,7 @@ Run any command with `--help` to see its options.
 ## Features
 
 - iOS controller, external keyboard, and mouse support.
+- On-screen gamepad that reports controller input instead of keyboard input, so it never clashes with key bindings.
 - Original graphics and frame rate settings, with support for the iPad's aspect ratio.
 - General Animator binding fixes for animation issues.
 - Logging and Metal performance overlay options in system Settings.
@@ -191,8 +192,11 @@ After installation, open iPadOS Settings → Apps → Hollow Knight: Silksong to
 - Diagnostic Logs: write resource loading and other logs to a file.
 - Performance Overlay: show frame rate, frame time, and GPU time.
 - Show Startup Details: display diagnostic text on screen.
+- On-Screen Gamepad: show on-screen gamepad controls, set to Auto, Always On, or Always Off.
 
 The notice is shown by default. Set “On Next Launch” to “Go Straight to Game” on the notice page to skip it. Logs and the performance overlay are off by default.
+
+The on-screen gamepad defaults to Auto: it appears when you touch the screen during gameplay and hides as soon as an external keyboard, controller, or mouse reports input. The notice page changes it directly, and the choice survives restarts.
 
 To troubleshoot, enable Diagnostic Logs, restart the app, reproduce the issue, and export `native.log` from the app's Documents folder.
 
@@ -224,7 +228,7 @@ Current release: **0.7.9 / build 23 test version**.
 | Build environment | Apple Silicon Mac, Unity 6000.0.50f1, Python 3.12, Xcode |
 | System requirements | Minimum build target: iOS / iPadOS 16.0 |
 | Tested device | iPad Pro 11-inch (2021, M1) |
-| Controls | External keyboard or controller for gameplay, with mouse button binding; partial touch support |
+| Controls | External keyboard or controller for gameplay, with mouse button binding; optional on-screen gamepad for touch play |
 | Startup UI and app name | Simplified Chinese, Traditional Chinese, and English, following the system language |
 
 Before using a mouse, turn off **Settings → Accessibility → Touch → AssistiveTouch** on your iPad to prevent left clicks from being converted into screen taps.
@@ -235,6 +239,7 @@ Before using a mouse, turn off **Settings → Accessibility → Touch → Assist
 
 - Added mouse menu clicks and in-game button binding.
 - Fixed missed mouse button releases and unintended menu clicks after rebinding.
+- Added an on-screen gamepad, set to Auto, Always On, or Always Off.
 - Fixed the Chinese font used by the binding prompt.
 
 ### 0.7.4

@@ -107,6 +107,12 @@ def configure(project, game, diagnostics=False, metal_hud=False):
         if key == 'NativeDiagnosticLogs':
             specifiers.append(dict(Type='PSGroupSpecifier', Title='sectionDiagnostics', FooterText='diagnosticsHelp'))
         specifiers.append(dict(Type='PSToggleSwitchSpecifier', Title=title, Key=key, DefaultValue=default))
+    # The on-screen gamepad mode is a three-way choice; 0 (auto) is also the
+    # value an unregistered key reports, so auto stays the default.
+    specifiers.append(dict(Type='PSGroupSpecifier', FooterText='settingVirtualPadHelp'))
+    specifiers.append(dict(Type='PSMultiValueSpecifier', Title='settingVirtualPad', Key='NativeVirtualPadMode',
+                           DefaultValue=0, Values=[0, 1, 2],
+                           Titles=['settingPadAuto', 'settingPadAlways', 'settingPadNever']))
     (settings / 'Root.plist').write_bytes(plistlib.dumps(dict(PreferenceSpecifiers=specifiers, StringsTable='Root')))
     (settings / 'Info.plist').write_bytes(plistlib.dumps(dict(CFBundleIdentifier='native.settings', CFBundleVersion='1', CFBundlePackageType='BNDL')))
     for language, values in strings.items():

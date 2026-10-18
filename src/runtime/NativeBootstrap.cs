@@ -120,6 +120,7 @@ public sealed class NativeBootstrap : MonoBehaviour
         instance = host.AddComponent<NativeBootstrap>();
         host.AddComponent<NativeDisplaySettings>();
         host.AddComponent<NativeAnimatorCompatibility>();
+        host.AddComponent<NativeVirtualPad>();
         if (NativePreferences.StartupDetails) host.AddComponent<NativeDiagnosticOverlay>();
         if (NativePreferences.ResourceLogs) host.AddComponent<NativePerformanceSampler>();
     }
