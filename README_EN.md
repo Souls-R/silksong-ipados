@@ -131,7 +131,7 @@ If resource conversion is interrupted, run the same command to resume. Add `--re
 
 `prepare` requires an output directory that does not already exist. Choose a new `nativeOutput` path when regenerating the project.
 
-The default version is 0.7.9, build 23. Change these with `--version` and `--build-number`. Keep the same `--bundle-id` when updating an existing installation.
+The default version is 0.8.0, build 27. Change these with `--version` and `--build-number`. Keep the same `--bundle-id` when updating an existing installation.
 
 ### Build the IPA
 
@@ -144,7 +144,7 @@ python3 build.py native --work "$nativeOutput"
 The IPA and logs are under `$buildRoot`:
 
 ```text
-native/output/SilksongNative-0.7.9-unsigned.ipa
+native/output/SilksongNative-0.8.0-unsigned.ipa
 native/logs/
 ```
 
@@ -216,7 +216,7 @@ Changing the signing account or bundle identifier may prevent an update from rep
 
 ## Support and Testing
 
-Current release: **0.7.9 / build 23 test version**.
+Current release: **0.8.0 / build 27 test version**.
 
 | Item | Current scope |
 | --- | --- |
@@ -232,12 +232,13 @@ Before using a mouse, turn off **Settings → Accessibility → Touch → Assist
 
 ## Release Notes
 
-### Unreleased
+### 0.8.0
 
-- Lowered the minimum deployment target to iOS / iPadOS 16.0.
+- Fixed DualSense (PS5) touchpad button press and release input, preserving the game's original input and button binding logic.
 
 ### 0.7.9
 
+- Lowered the minimum deployment target to iOS / iPadOS 16.0.
 - Added mouse menu clicks and in-game button binding.
 - Fixed missed mouse button releases and unintended menu clicks after rebinding.
 - Fixed the Chinese font used by the binding prompt.

@@ -131,7 +131,7 @@ python3 build.py prepare --game-data "$gameData" --unity-data "$unityData" --inp
 
 `prepare` 需要一个尚不存在的输出目录。重新生成工程时，换一个 `nativeOutput` 路径。
 
-默认版本为 0.7.9、构建号 23，可用 `--version` 和 `--build-number` 修改。覆盖更新时，沿用原来的 `--bundle-id`。
+默认版本为 0.8.0、构建号 27，可用 `--version` 和 `--build-number` 修改。覆盖更新时，沿用原来的 `--bundle-id`。
 
 ### 编译 IPA
 
@@ -144,7 +144,7 @@ python3 build.py native --work "$nativeOutput"
 IPA 和日志位于 `$buildRoot` 下：
 
 ```text
-native/output/SilksongNative-0.7.9-unsigned.ipa
+native/output/SilksongNative-0.8.0-unsigned.ipa
 native/logs/
 ```
 
@@ -216,7 +216,7 @@ Documents/
 
 ## 支持与测试范围
 
-当前为 **0.7.9 / build 23 测试版**。
+当前为 **0.8.0 / build 27 测试版**。
 
 | 项目 | 当前范围 |
 | --- | --- |
@@ -232,12 +232,13 @@ Documents/
 
 ## 更新说明
 
-### 开发中
+### 0.8.0
 
-- 最低部署目标降至 iOS / iPadOS 16.0。
+- 修复 DualSense（PS5）手柄触摸板按下与松开输入，保留游戏原有的输入和按键绑定逻辑。
 
 ### 0.7.9
 
+- 最低部署目标降至 iOS / iPadOS 16.0。
 - 支持鼠标菜单点击和游戏内按键绑定。
 - 修复鼠标松开事件丢失、绑定后误触菜单的问题。
 - 修复绑定提示的中文字体显示。
