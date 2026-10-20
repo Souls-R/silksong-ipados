@@ -198,7 +198,7 @@ The notice is shown by default. Set “On Next Launch” to “Go Straight to Ga
 
 The on-screen gamepad defaults to Auto: it appears when you touch the screen during gameplay and hides as soon as an external keyboard, controller, or mouse reports input. The notice page changes it directly, and the choice survives restarts.
 
-Select Adjust Button Positions on the notice page to drag each control and the stick into place and pinch with two fingers to resize it; the layout saves on release and applies immediately, and Reset restores the default. Positions are stored as fractions of the screen, so one layout fits both iPads and tall phone screens.
+Select Adjust Button Positions on the notice page to drag each control and the stick into place and pinch with two fingers to resize it; the layout saves on release and applies immediately, and Reset restores the default.
 
 To troubleshoot, enable Diagnostic Logs, restart the app, reproduce the issue, and export `native.log` from the app's Documents folder.
 

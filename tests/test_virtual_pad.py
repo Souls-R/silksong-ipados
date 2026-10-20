@@ -74,14 +74,11 @@ class VirtualPadTests(unittest.TestCase):
                      '- (UIView<NativePadPlaceable>*)controlAt:(CGPoint)point',
                      'declines tracking'):
             self.assertIn(call, pad)
-        # A saved layout is a canvas fraction plus a size multiplier, so it
-        # survives a different screen size or aspect ratio.
+        # A saved layout is a canvas offset plus a size multiplier, and the whole
+        # canvas is scaled into the safe area as one piece.
         self.assertIn('"%.4f,%.4f,%.3f"', pad)
-        # The canvas is the safe area itself: a phone screen keeps its own shape
-        # instead of being letterboxed into an iPad-shaped box.
-        self.assertIn('self.canvasSize = size', pad)
-        self.assertIn('PadDesignWidth', pad)
-        self.assertIn('PadMinFactor', pad)
+        self.assertIn('PadCanvasWidth', pad)
+        self.assertIn('CGAffineTransformMakeScale(scale, scale)', pad)
         # A forced-off pad still has to be visible while it is being arranged,
         # and must not report a gamepad until the player is back in the game.
         self.assertIn('PadEditing || NativeVirtualPadVisible(NativeVirtualPad_Mode(), self.realDeviceInput)', pad)
