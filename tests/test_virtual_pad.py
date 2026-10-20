@@ -61,11 +61,27 @@ class VirtualPadTests(unittest.TestCase):
         # Every declared entry point needs a definition, or the link fails.
         for name in ENTRY_POINTS:
             self.assertIn(f'NativeVirtualPad_{name}', pad)
-        # The editor must persist positions per control and keep them on-canvas.
+        # The editor must persist the layout per control and keep controls on-canvas.
         self.assertIn('PadLayoutKey', pad)
-        for call in ('NativeVirtualPadClampToCanvas(', '- (void)saveLayout', '- (void)loadLayout',
-                     'for (UIPanGestureRecognizer* drag in self.drags.allValues) drag.enabled = editing'):
+        for call in ('NativeVirtualPadClampToCanvas(', '- (void)saveLayout', '- (void)loadLayout'):
             self.assertIn(call, pad)
+        # Arranging runs from overlay-level gestures, so a control's own touch
+        # tracking can no longer swallow the drag.
+        for call in ('- (void)drag:(UIPanGestureRecognizer*)pan', '- (void)pinch:(UIPinchGestureRecognizer*)pinch',
+                     '[self addGestureRecognizer:self.editPan]', '[self addGestureRecognizer:self.editPinch]',
+                     'self.editPan.enabled = editing', 'self.editPinch.enabled = editing',
+                     'self.sizes[control.name] = @(size)',
+                     '- (UIView<NativePadPlaceable>*)controlAt:(CGPoint)point',
+                     'declines tracking'):
+            self.assertIn(call, pad)
+        # A saved layout is a canvas fraction plus a size multiplier, so it
+        # survives a different screen size or aspect ratio.
+        self.assertIn('"%.4f,%.4f,%.3f"', pad)
+        # The canvas is the safe area itself: a phone screen keeps its own shape
+        # instead of being letterboxed into an iPad-shaped box.
+        self.assertIn('self.canvasSize = size', pad)
+        self.assertIn('PadDesignWidth', pad)
+        self.assertIn('PadMinFactor', pad)
         # A forced-off pad still has to be visible while it is being arranged,
         # and must not report a gamepad until the player is back in the game.
         self.assertIn('PadEditing || NativeVirtualPadVisible(NativeVirtualPad_Mode(), self.realDeviceInput)', pad)
