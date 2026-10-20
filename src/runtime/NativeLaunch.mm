@@ -12,6 +12,12 @@ static NSString* LaunchLanguage;
 static int LaunchAction;
 static NSString* const ProjectURL = @"https://github.com/Souls-R/silksong-ipados";
 
+// The notice pages are authored on the same 1194x834 canvas as the on-screen
+// pad. A phone safe area is a different shape, so every frame is mapped into it
+// instead of the whole page being scaled into a 4:3 box and letterboxed.
+static const CGFloat LaunchDesignWidth = 1194;
+static const CGFloat LaunchDesignHeight = 834;
+
 static NSString* AssetPath(NSString* name)
 {
     return [[[NSBundle mainBundle] bundlePath] stringByAppendingPathComponent:
@@ -52,6 +58,14 @@ static UIFont* MenuFont(CGFloat size)
 @property(nonatomic, strong) CADisplayLink* controllerPoll;
 @property(nonatomic) NSInteger selection;
 @property(nonatomic) int page;
+@property(nonatomic, copy) NSString* pageDetail;
+// The safe area the current page was laid out for, plus the design-to-safe-area
+// ratios every frame is mapped with. Text takes the smaller ratio, so glyphs are
+// never stretched and lines still fit their frames.
+@property(nonatomic) CGSize footprint;
+@property(nonatomic) CGFloat scaleX;
+@property(nonatomic) CGFloat scaleY;
+@property(nonatomic) CGFloat fontScale;
 @property(nonatomic) unsigned previousButtons;
 - (void)showPage:(int)page detail:(NSString*)detail;
 - (void)stop;
@@ -65,7 +79,8 @@ static NativeLaunchView* LaunchView;
     if ((self = [super initWithFrame:frame])) {
         self.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
         self.backgroundColor = UIColor.blackColor;
-        self.canvas = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 1194, 834)];
+        self.canvas = [[UIView alloc] initWithFrame:CGRectMake(0, 0, LaunchDesignWidth, LaunchDesignHeight)];
+        self.scaleX = self.scaleY = self.fontScale = 1;
         [self addSubview:self.canvas];
         self.accessibilityViewIsModal = YES;
     }
@@ -75,10 +90,26 @@ static NativeLaunchView* LaunchView;
 {
     [super layoutSubviews];
     CGRect safe = UIEdgeInsetsInsetRect(self.bounds, self.safeAreaInsets);
-    CGFloat scale = MIN(safe.size.width / 1194.0, safe.size.height / 834.0);
-    self.canvas.bounds = CGRectMake(0, 0, 1194, 834);
+    if (safe.size.width < 1 || safe.size.height < 1) return;
+    // The canvas is the safe area itself, so the page spreads over the whole
+    // screen instead of being scaled into a 4:3 box with bars on both sides.
+    self.scaleX = safe.size.width / LaunchDesignWidth;
+    self.scaleY = safe.size.height / LaunchDesignHeight;
+    self.fontScale = MIN(self.scaleX, self.scaleY);
+    self.canvas.bounds = CGRectMake(0, 0, safe.size.width, safe.size.height);
     self.canvas.center = CGPointMake(CGRectGetMidX(safe), CGRectGetMidY(safe));
-    self.canvas.transform = CGAffineTransformMakeScale(scale, scale);
+    self.canvas.transform = CGAffineTransformIdentity;
+    if (!CGSizeEqualToSize(safe.size, self.footprint)) {
+        // The page was drawn before the safe area was known; lay it out again.
+        self.footprint = safe.size;
+        if (self.page) [self showPage:self.page detail:self.pageDetail];
+    }
+}
+// Design frame in, canvas frame out: each axis follows its own ratio, so the page
+// fills the safe area while the rendered text stays one unstretched size.
+- (CGRect)scaledX:(CGFloat)x y:(CGFloat)y w:(CGFloat)w h:(CGFloat)h
+{
+    return CGRectMake(x * self.scaleX, y * self.scaleY, w * self.scaleX, h * self.scaleY);
 }
 - (BOOL)canBecomeFirstResponder { return YES; }
 - (NSArray<UIKeyCommand*>*)keyCommands
@@ -92,11 +123,11 @@ static NativeLaunchView* LaunchView;
     }
     return keys;
 }
-- (UILabel*)label:(NSString*)text frame:(CGRect)frame size:(CGFloat)size color:(UIColor*)color
+- (UILabel*)label:(NSString*)text x:(CGFloat)x y:(CGFloat)y w:(CGFloat)w h:(CGFloat)h size:(CGFloat)size color:(UIColor*)color
 {
-    UILabel* label = [[UILabel alloc] initWithFrame:frame];
+    UILabel* label = [[UILabel alloc] initWithFrame:[self scaledX:x y:y w:w h:h]];
     label.text = text;
-    label.font = MenuFont(size);
+    label.font = MenuFont(size * self.fontScale);
     label.textColor = color;
     label.textAlignment = NSTextAlignmentCenter;
     label.numberOfLines = 0;
@@ -106,9 +137,9 @@ static NativeLaunchView* LaunchView;
 - (UIButton*)button:(NSString*)title y:(CGFloat)y action:(SEL)action
 {
     UIButton* button = [UIButton buttonWithType:UIButtonTypeCustom];
-    button.frame = CGRectMake(317, y, 560, 54);
+    button.frame = [self scaledX:317 y:y w:560 h:54];
     [button setTitle:title forState:UIControlStateNormal];
-    button.titleLabel.font = MenuFont(24);
+    button.titleLabel.font = MenuFont(24 * self.fontScale);
     [button setTitleColor:[UIColor colorWithWhite:.85 alpha:1] forState:UIControlStateNormal];
     [button setTitleColor:UIColor.whiteColor forState:UIControlStateHighlighted];
     [button addTarget:self action:action forControlEvents:UIControlEventTouchUpInside];
@@ -130,7 +161,7 @@ static NativeLaunchView* LaunchView;
     // Static accents, no particle renderer or animation loop after handoff.
     for (NSInteger i = 0; i < 24; i++) {
         CALayer* ember = [CALayer layer];
-        ember.frame = CGRectMake(35 + (i * 173) % 1120, 40 + (i * 229) % 760, 1.5, 5 + i % 8);
+        ember.frame = [self scaledX:35 + (i * 173) % 1120 y:40 + (i * 229) % 760 w:1.5 h:5 + i % 8];
         ember.backgroundColor = [UIColor colorWithRed:.87 green:.41 blue:.22 alpha:.20 + (i % 4) * .04].CGColor;
         ember.transform = CATransform3DMakeRotation(.4, 0, 0, 1);
         [self.canvas.layer addSublayer:ember];
@@ -138,10 +169,10 @@ static NativeLaunchView* LaunchView;
 }
 - (void)title:(NSString*)title y:(CGFloat)y
 {
-    [self label:title frame:CGRectMake(90, y, 1014, 52) size:34 color:UIColor.whiteColor];
+    [self label:title x:90 y:y w:1014 h:52 size:34 color:UIColor.whiteColor];
     UIImageView* fleur = [[UIImageView alloc] initWithImage:[UIImage imageWithContentsOfFile:AssetPath(@"Warning_Fleur0008.png")]];
     fleur.contentMode = UIViewContentModeScaleAspectFit;
-    fleur.frame = CGRectMake(402, y + 58, 390, 47);
+    fleur.frame = [self scaledX:402 y:y + 58 w:390 h:47];
     [self.canvas addSubview:fleur];
 }
 - (void)syncChoice
@@ -164,6 +195,7 @@ static NativeLaunchView* LaunchView;
     [self stop];
     NativeVirtualPad_Detach();
     self.page = page;
+    self.pageDetail = detail;
     self.nextLaunch = nil;
     self.nextValue = nil;
     self.padChoice = nil;
@@ -175,49 +207,49 @@ static NativeLaunchView* LaunchView;
     self.choices = @[];
     UIColor* body = [UIColor colorWithRed:.88 green:.85 blue:.82 alpha:1];
     if (page == 3) {
-        [self label:Text(@"loading") frame:CGRectMake(100, 723, 994, 40) size:18 color:body];
+        [self label:Text(@"loading") x:100 y:723 w:994 h:40 size:18 color:body];
         return;
     }
     [self background];
     if (page == 1) {
         [self title:Text(@"noticeTitle") y:162];
-        [self label:Text(@"noticeFree") frame:CGRectMake(157, 298, 880, 62) size:21 color:UIColor.whiteColor];
-        [self label:Text(@"noticeResale") frame:CGRectMake(157, 369, 880, 76) size:21 color:body];
+        [self label:Text(@"noticeFree") x:157 y:298 w:880 h:62 size:21 color:UIColor.whiteColor];
+        [self label:Text(@"noticeResale") x:157 y:369 w:880 h:76 size:21 color:body];
         UIButton* enter = [self button:Text(@"enterGame") y:463 action:@selector(enter:)];
         self.nextLaunch = [self button:@"" y:526 action:@selector(toggle:)];
-        UILabel* label = [[UILabel alloc] initWithFrame:CGRectMake(25, 0, 250, 54)];
-        label.font = MenuFont(22); label.textColor = body; label.text = Text(@"nextLaunch");
+        UILabel* label = [[UILabel alloc] initWithFrame:[self scaledX:25 y:0 w:250 h:54]];
+        label.font = MenuFont(22 * self.fontScale); label.textColor = body; label.text = Text(@"nextLaunch");
         [self.nextLaunch addSubview:label];
-        self.nextValue = [[UILabel alloc] initWithFrame:CGRectMake(255, 0, 280, 54)];
-        self.nextValue.font = MenuFont(22); self.nextValue.textColor = body;
+        self.nextValue = [[UILabel alloc] initWithFrame:[self scaledX:255 y:0 w:280 h:54]];
+        self.nextValue.font = MenuFont(22 * self.fontScale); self.nextValue.textColor = body;
         self.nextValue.textAlignment = NSTextAlignmentRight;
         [self.nextLaunch addSubview:self.nextValue];
         [self syncChoice];
         self.padChoice = [self button:@"" y:589 action:@selector(pad:)];
-        UILabel* padLabel = [[UILabel alloc] initWithFrame:CGRectMake(25, 0, 250, 54)];
-        padLabel.font = MenuFont(22); padLabel.textColor = body; padLabel.text = Text(@"settingVirtualPad");
+        UILabel* padLabel = [[UILabel alloc] initWithFrame:[self scaledX:25 y:0 w:250 h:54]];
+        padLabel.font = MenuFont(22 * self.fontScale); padLabel.textColor = body; padLabel.text = Text(@"settingVirtualPad");
         [self.padChoice addSubview:padLabel];
-        self.padValue = [[UILabel alloc] initWithFrame:CGRectMake(255, 0, 280, 54)];
-        self.padValue.font = MenuFont(22); self.padValue.textColor = body;
+        self.padValue = [[UILabel alloc] initWithFrame:[self scaledX:255 y:0 w:280 h:54]];
+        self.padValue.font = MenuFont(22 * self.fontScale); self.padValue.textColor = body;
         self.padValue.textAlignment = NSTextAlignmentRight;
         [self.padChoice addSubview:self.padValue];
         [self syncPad];
         self.padEdit = [self button:Text(@"padEdit") y:652 action:@selector(editPad:)];
-        [self label:Text(@"noticeHelp") frame:CGRectMake(117, 706, 960, 40) size:15 color:[UIColor colorWithWhite:.65 alpha:1]];
+        [self label:Text(@"noticeHelp") x:117 y:706 w:960 h:40 size:15 color:[UIColor colorWithWhite:.65 alpha:1]];
         UIButton* home = [self button:Text(@"projectHome") y:750 action:@selector(home:)];
-        home.titleLabel.font = MenuFont(16);
+        home.titleLabel.font = MenuFont(16 * self.fontScale);
         self.choices = @[enter, self.nextLaunch, self.padChoice, self.padEdit, home];
     } else {
         [self title:Text(page == 2 ? @"missingTitle" : (page == 6 ? @"startupErrorTitle" : @"loadErrorTitle")) y:122];
         NSString* introduction = [NSString stringWithFormat:@"%@\n%@", Text(@"missingIntro"), Text(@"missingInstruction")];
-        [self label:page == 5 ? Text(@"restartHelp") : (page == 6 ? Text(@"startupErrorHelp") : introduction) frame:CGRectMake(127, 257, 940, 78) size:21 color:body];
+        [self label:page == 5 ? Text(@"restartHelp") : (page == 6 ? Text(@"startupErrorHelp") : introduction) x:127 y:257 w:940 h:78 size:21 color:body];
         NSString* path = [NSString stringWithFormat:@"%@\nSilksongResources-v1", Text(@"resourcePath")];
-        [self label:path frame:CGRectMake(100, 343, 994, 66) size:22 color:UIColor.whiteColor];
-        [self label:Text(@"missingKeep") frame:CGRectMake(100, 417, 994, 40) size:18 color:body];
-        [self label:detail frame:CGRectMake(107, 469, 980, 70) size:16 color:[UIColor colorWithWhite:.65 alpha:1]];
+        [self label:path x:100 y:343 w:994 h:66 size:22 color:UIColor.whiteColor];
+        [self label:Text(@"missingKeep") x:100 y:417 w:994 h:40 size:18 color:body];
+        [self label:detail x:107 y:469 w:980 h:70 size:16 color:[UIColor colorWithWhite:.65 alpha:1]];
         UIButton* retry = [self button:Text(@"retry") y:558 action:@selector(retry:)];
         UIButton* home = [self button:Text(@"projectHome") y:625 action:@selector(home:)];
-        home.titleLabel.font = MenuFont(16);
+        home.titleLabel.font = MenuFont(16 * self.fontScale);
         retry.hidden = page == 6;
         self.choices = page == 6 ? @[home] : @[retry, home];
     }
@@ -240,9 +272,13 @@ static NativeLaunchView* LaunchView;
     if (!self.choices.count) return;
     self.selection = (index + self.choices.count) % self.choices.count;
     CGRect frame = self.choices[self.selection].frame;
-    self.leftCursor.frame = CGRectMake(frame.origin.x - 30, CGRectGetMidY(frame) - 15, 26, 30);
-    self.rightCursor.bounds = CGRectMake(0, 0, 26, 30);
-    self.rightCursor.center = CGPointMake(CGRectGetMaxX(frame) + 17, CGRectGetMidY(frame));
+    // The cursors keep their design distance from the row they mark.
+    CGFloat cursorWidth = 26 * self.fontScale;
+    CGFloat cursorHeight = 30 * self.fontScale;
+    self.leftCursor.bounds = CGRectMake(0, 0, cursorWidth, cursorHeight);
+    self.leftCursor.center = CGPointMake(frame.origin.x - 17 * self.fontScale, CGRectGetMidY(frame));
+    self.rightCursor.bounds = CGRectMake(0, 0, cursorWidth, cursorHeight);
+    self.rightCursor.center = CGPointMake(CGRectGetMaxX(frame) + 17 * self.fontScale, CGRectGetMidY(frame));
 }
 - (void)key:(UIKeyCommand*)command
 {

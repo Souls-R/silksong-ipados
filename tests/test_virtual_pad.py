@@ -87,6 +87,18 @@ class VirtualPadTests(unittest.TestCase):
         self.assertIn('PadEditing || NativeVirtualPadVisible(NativeVirtualPad_Mode(), self.realDeviceInput)', pad)
         self.assertIn('if (PadEditing) { result->state = 0; return; }', pad)
 
+    def test_notice_page_fills_the_safe_area(self):
+        launch = (REPO / 'src/runtime/NativeLaunch.mm').read_text(encoding='utf-8')
+        # The page is authored in design units and mapped onto the safe area, so a
+        # phone keeps its own screen shape instead of a letterboxed 4:3 box.
+        self.assertIn('CGRect safe = UIEdgeInsetsInsetRect(self.bounds, self.safeAreaInsets);', launch)
+        self.assertIn('self.scaleX = safe.size.width / LaunchDesignWidth;', launch)
+        self.assertIn('self.scaleY = safe.size.height / LaunchDesignHeight;', launch)
+        self.assertIn('self.fontScale = MIN(self.scaleX, self.scaleY);', launch)
+        self.assertIn('- (CGRect)scaledX:', launch)
+        # A frame left in bare design units would land outside the safe area.
+        self.assertNotIn('frame:CGRectMake', launch)
+
     def test_generated_settings_and_build_list_include_the_pad(self):
         launch = (REPO / 'scripts/launch.py').read_text(encoding='utf-8')
         self.assertIn("Key='NativeVirtualPadMode'", launch)
