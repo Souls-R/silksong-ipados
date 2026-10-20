@@ -131,7 +131,7 @@ If resource conversion is interrupted, run the same command to resume. Add `--re
 
 `prepare` requires an output directory that does not already exist. Choose a new `nativeOutput` path when regenerating the project.
 
-The default version is 0.8.0, build 27. Change these with `--version` and `--build-number`. Keep the same `--bundle-id` when updating an existing installation.
+The default version is 0.8.1, build 29. Change these with `--version` and `--build-number`. Keep the same `--bundle-id` when updating an existing installation.
 
 ### Build the IPA
 
@@ -144,7 +144,7 @@ python3 build.py native --work "$nativeOutput"
 The IPA and logs are under `$buildRoot`:
 
 ```text
-native/output/SilksongNative-0.8.0-unsigned.ipa
+native/output/SilksongNative-0.8.1-unsigned.ipa
 native/logs/
 ```
 
@@ -216,7 +216,7 @@ Changing the signing account or bundle identifier may prevent an update from rep
 
 ## Support and Testing
 
-Current release: **0.8.0 / build 27 test version**.
+Current release: **0.8.1 / build 29 test version**.
 
 | Item | Current scope |
 | --- | --- |
@@ -231,6 +231,11 @@ Current release: **0.8.0 / build 27 test version**.
 Before using a mouse, turn off **Settings → Accessibility → Touch → AssistiveTouch** on your iPad to prevent left clicks from being converted into screen taps.
 
 ## Release Notes
+
+### 0.8.1
+
+- Automatically requests a pause when switching apps or losing focus. The pause menu stays open on return until the player resumes manually.
+- Repeated notifications do not resume gameplay; an existing pause menu or settings submenu stays open.
 
 ### 0.8.0
 
