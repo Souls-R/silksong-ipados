@@ -3,6 +3,8 @@
 #import <GameController/GameController.h>
 #import <QuartzCore/QuartzCore.h>
 #include <math.h>
+#include <stdlib.h>
+#include <string.h>
 
 extern "C" UIView* UnityGetGLView();
 
@@ -43,6 +45,9 @@ static UIFont* MenuFont(CGFloat size)
 @property(nonatomic, strong) NSArray<UIButton*>* choices;
 @property(nonatomic, strong) UIButton* nextLaunch;
 @property(nonatomic, strong) UILabel* nextValue;
+@property(nonatomic, strong) UIButton* hudChoice;
+@property(nonatomic, strong) UILabel* hudValue;
+@property(nonatomic, strong) UILabel* hudHint;
 @property(nonatomic, strong) UIImageView* leftCursor;
 @property(nonatomic, strong) UIImageView* rightCursor;
 @property(nonatomic, strong) CADisplayLink* controllerPoll;
@@ -147,12 +152,28 @@ static NativeLaunchView* LaunchView;
     self.nextLaunch.accessibilityLabel = Text(@"nextLaunch");
     self.nextLaunch.accessibilityValue = self.nextValue.text;
 }
+- (void)syncHud
+{
+    BOOL enabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"NativeMetalHUD"];
+    self.hudValue.text = Text(enabled ? @"hudOn" : @"hudOff");
+    self.hudChoice.accessibilityLabel = Text(@"settingHud");
+    self.hudChoice.accessibilityValue = self.hudValue.text;
+    // The overlay only looks at its environment when Metal starts, so a change
+    // made here shows up after the next start. The hint appears only when the
+    // saved choice and the running session disagree.
+    const char* value = getenv("MTL_HUD_ENABLED");
+    BOOL running = value && strcmp(value, "1") == 0;
+    self.hudHint.hidden = running == enabled;
+}
 - (void)showPage:(int)page detail:(NSString*)detail
 {
     [self stop];
     self.page = page;
     self.nextLaunch = nil;
     self.nextValue = nil;
+    self.hudChoice = nil;
+    self.hudValue = nil;
+    self.hudHint = nil;
     self.selection = 0;
     for (UIView* view in self.canvas.subviews) [view removeFromSuperview];
     for (CALayer* layer in [self.canvas.layer.sublayers copy]) [layer removeFromSuperlayer];
@@ -177,10 +198,20 @@ static NativeLaunchView* LaunchView;
         self.nextValue.textAlignment = NSTextAlignmentRight;
         [self.nextLaunch addSubview:self.nextValue];
         [self syncChoice];
-        [self label:Text(@"noticeHelp") frame:CGRectMake(117, 598, 960, 40) size:15 color:[UIColor colorWithWhite:.65 alpha:1]];
-        UIButton* home = [self button:Text(@"projectHome") y:650 action:@selector(home:)];
+        self.hudChoice = [self button:@"" y:589 action:@selector(hud:)];
+        UILabel* hudLabel = [[UILabel alloc] initWithFrame:CGRectMake(25, 0, 250, 54)];
+        hudLabel.font = MenuFont(22); hudLabel.textColor = body; hudLabel.text = Text(@"settingHud");
+        [self.hudChoice addSubview:hudLabel];
+        self.hudValue = [[UILabel alloc] initWithFrame:CGRectMake(255, 0, 280, 54)];
+        self.hudValue.font = MenuFont(22); self.hudValue.textColor = body;
+        self.hudValue.textAlignment = NSTextAlignmentRight;
+        [self.hudChoice addSubview:self.hudValue];
+        self.hudHint = [self label:Text(@"hudRestart") frame:CGRectMake(117, 648, 960, 24) size:13 color:[UIColor colorWithWhite:.65 alpha:1]];
+        [self syncHud];
+        [self label:Text(@"noticeHelp") frame:CGRectMake(117, 678, 960, 40) size:15 color:[UIColor colorWithWhite:.65 alpha:1]];
+        UIButton* home = [self button:Text(@"projectHome") y:724 action:@selector(home:)];
         home.titleLabel.font = MenuFont(16);
-        self.choices = @[enter, self.nextLaunch, home];
+        self.choices = @[enter, self.nextLaunch, self.hudChoice, home];
     } else {
         [self title:Text(page == 2 ? @"missingTitle" : (page == 6 ? @"startupErrorTitle" : @"loadErrorTitle")) y:122];
         NSString* introduction = [NSString stringWithFormat:@"%@\n%@", Text(@"missingIntro"), Text(@"missingInstruction")];
@@ -224,6 +255,7 @@ static NativeLaunchView* LaunchView;
     else if ([command.input isEqualToString:UIKeyInputDownArrow]) [self selectItemAtIndex:self.selection + 1];
     else if ([command.input isEqualToString:UIKeyInputLeftArrow] || [command.input isEqualToString:UIKeyInputRightArrow]) {
         if (self.choices.count && self.choices[self.selection] == self.nextLaunch) [self toggle:nil];
+        else if (self.choices.count && self.choices[self.selection] == self.hudChoice) [self hud:nil];
     } else if (self.choices.count) [self.choices[self.selection] sendActionsForControlEvents:UIControlEventTouchUpInside];
 }
 - (unsigned)controllerButtons
@@ -246,7 +278,10 @@ static NativeLaunchView* LaunchView;
     self.previousButtons = current;
     if (pressed & 1) [self selectItemAtIndex:self.selection - 1];
     if (pressed & 2) [self selectItemAtIndex:self.selection + 1];
-    if ((pressed & 4) && self.choices.count && self.choices[self.selection] == self.nextLaunch) [self toggle:nil];
+    if ((pressed & 4) && self.choices.count) {
+        if (self.choices[self.selection] == self.nextLaunch) [self toggle:nil];
+        else if (self.choices[self.selection] == self.hudChoice) [self hud:nil];
+    }
     if ((pressed & 8) && self.choices.count) [self.choices[self.selection] sendActionsForControlEvents:UIControlEventTouchUpInside];
 }
 - (void)enter:(id)sender { LaunchAction = 1; }
@@ -256,6 +291,14 @@ static NativeLaunchView* LaunchView;
     NSUserDefaults* settings = NSUserDefaults.standardUserDefaults;
     [settings setBool:![settings boolForKey:@"NativeShowNotice"] forKey:@"NativeShowNotice"];
     [self syncChoice];
+}
+- (void)hud:(id)sender
+{
+    // Same preference the generated startup code reads before Unity loads Metal,
+    // so the row and the system Settings switch stay in sync.
+    NSUserDefaults* settings = NSUserDefaults.standardUserDefaults;
+    [settings setBool:![settings boolForKey:@"NativeMetalHUD"] forKey:@"NativeMetalHUD"];
+    [self syncHud];
 }
 - (void)home:(id)sender { [UIApplication.sharedApplication openURL:[NSURL URLWithString:ProjectURL] options:@{} completionHandler:nil]; }
 - (void)stop { [self.controllerPoll invalidate]; self.controllerPoll = nil; }

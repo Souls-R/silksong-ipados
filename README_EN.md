@@ -192,7 +192,7 @@ After installation, open iPadOS Settings → Apps → Hollow Knight: Silksong to
 - Performance Overlay: show frame rate, frame time, and GPU time.
 - Show Startup Details: display diagnostic text on screen.
 
-The notice is shown by default. Set “On Next Launch” to “Go Straight to Game” on the notice page to skip it. Logs and the performance overlay are off by default.
+The notice is shown by default. Set “On Next Launch” to “Go Straight to Game” on the notice page to skip it. Logs and the performance overlay are off by default. The performance overlay can also be switched on the notice page; a change applies the next time the app starts.
 
 To troubleshoot, enable Diagnostic Logs, restart the app, reproduce the issue, and export `native.log` from the app's Documents folder.
 
