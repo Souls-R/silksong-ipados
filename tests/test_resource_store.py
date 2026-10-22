@@ -12,6 +12,9 @@ from scripts.common import REPO
 
 
 class RuntimeResourceStore(unittest.TestCase):
+    def test_virtual_pad_state_switching_and_lifecycle(self):
+        self.run_csharp(['src/runtime/NativeVirtualPad.cs', 'tests/VirtualPadInputTests.cs'])
+
     def test_application_pause_is_idempotent_and_preserves_menus(self):
         self.run_csharp(['src/runtime/NativeAutoPause.cs', 'tests/AutoPauseTests.cs'])
 

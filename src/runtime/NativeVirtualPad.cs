@@ -2,6 +2,7 @@ using System;
 using System.Runtime.InteropServices;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.Controls;
 using UnityEngine.InputSystem.Layouts;
 using UnityEngine.InputSystem.iOS.LowLevel;
 using InputDevice = UnityEngine.InputSystem.InputDevice;
@@ -25,21 +26,25 @@ public sealed class NativeVirtualPad : MonoBehaviour
     const int LeftShoulder = 1 << 8, RightShoulder = 1 << 9;
     const int LeftTrigger = 1 << 10, RightTrigger = 1 << 11;
     const int Select = 1 << 12, Start = 1 << 13;
+    const float PhysicalStickThresholdSquared = 0.04f; // Ignore drift below 20% travel.
 
-    readonly Func<Snapshot> readState = ReadNative;
+    internal Func<Snapshot> readState = ReadNative;
+    internal Action realDeviceInput = NotifyRealDeviceInput;
     InputDevice device;
     int buttons;
     Vector2 stick;
+    bool suspended;
 
-    void Update()
+    internal void Update()
     {
+        if (suspended || !Application.isFocused) { Remove(); return; }
+        // Decide visibility before consuming pending taps: a physical device
+        // taking over must release the virtual pad in this same update.
+        YieldToRealDevice();
         Snapshot snapshot = readState();
         // -1: the display mode is off; 0: the overlay is hidden. Either way the
         // game must not see a virtual gamepad at all.
         if (snapshot.state <= 0) { Remove(); return; }
-        // A real controller, keyboard or mouse took over; the overlay hides
-        // itself and the next frame drops the virtual gamepad.
-        YieldToRealDevice();
         if (device == null)
         {
             device = InputSystem.AddDevice(new InputDeviceDescription {
@@ -58,7 +63,9 @@ public sealed class NativeVirtualPad : MonoBehaviour
         InputSystem.QueueStateEvent(device, State(buttons, stick));
     }
 
-    void OnDisable() { Remove(); }
+    internal void OnDisable() { Remove(); }
+    internal void OnApplicationFocus(bool focused) { if (!focused) Remove(); }
+    internal void OnApplicationPause(bool paused) { suspended = paused; if (paused) Remove(); }
 
     void Remove()
     {
@@ -72,16 +79,45 @@ public sealed class NativeVirtualPad : MonoBehaviour
 
     void YieldToRealDevice()
     {
-#if UNITY_IOS && !UNITY_EDITOR
-        var keyboard = Keyboard.current;
-        if (keyboard != null && keyboard.anyKey.wasPressedThisFrame) { NativeVirtualPad_RealDeviceInput(); return; }
         foreach (var other in InputSystem.devices)
         {
-            // Screen touches are the pad's own input path, not a real device.
-            if (other == null || other == device || other is Touchscreen || !other.wasUpdatedThisFrame) continue;
-            NativeVirtualPad_RealDeviceInput();
+            if (!HasPhysicalInput(other, device)) continue;
+            realDeviceInput();
             return;
         }
+    }
+
+    internal static bool HasPhysicalInput(InputDevice other, InputDevice virtualDevice)
+    {
+        if (other == null || other == virtualDevice || !other.wasUpdatedThisFrame) return false;
+        var keyboard = other as Keyboard;
+        if (keyboard != null) return keyboard.anyKey.wasPressedThisFrame;
+        var mouse = other as Mouse;
+        var pad = other as Gamepad;
+        // Device updates also include sensors and unchanged native controller
+        // polling. Neither means the player switched away from touch controls.
+        if (mouse != null)
+        {
+            if (mouse.delta.ReadValue().sqrMagnitude > 0 || mouse.scroll.ReadValue().sqrMagnitude > 0) return true;
+        }
+        else if (pad != null)
+        {
+            if (pad.leftStick.ReadValue().sqrMagnitude > PhysicalStickThresholdSquared ||
+                pad.rightStick.ReadValue().sqrMagnitude > PhysicalStickThresholdSquared) return true;
+        }
+        else return false;
+        foreach (var control in other.allControls)
+        {
+            var button = control as ButtonControl;
+            if (button != null && button.isPressed) return true;
+        }
+        return false;
+    }
+
+    static void NotifyRealDeviceInput()
+    {
+#if UNITY_IOS && !UNITY_EDITOR
+        NativeVirtualPad_RealDeviceInput();
 #endif
     }
 

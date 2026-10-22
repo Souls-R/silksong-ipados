@@ -242,6 +242,7 @@ Before using a mouse, turn off **Settings → Accessibility → Touch → Assist
 
 - Added an on-screen gamepad, set to Auto, Always On, or Always Off.
 - Drag buttons and the stick to reposition them, pinch to resize, and save the layout automatically.
+- Auto mode ignores sensors and idle device updates; switching away releases virtual buttons and stick input.
 
 ### 0.8.1
 
