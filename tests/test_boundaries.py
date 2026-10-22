@@ -135,6 +135,16 @@ class BuildBoundaries(unittest.TestCase):
                 else:
                     self.assertEqual(inspect_ipa(ipa, manifest)['embedded_large_bundles'], 0)
 
+    def test_generated_plist_locks_landscape_on_every_device(self):
+        # A per-device orientation key overrides the shared one, so all three must
+        # be written; an iPhone otherwise keeps its own portrait-capable default.
+        source = (REPO / 'scripts/prepare.py').read_text(encoding='utf-8')
+        for key in ("'UISupportedInterfaceOrientations'",
+                    "'UISupportedInterfaceOrientations~iphone'",
+                    "'UISupportedInterfaceOrientations~ipad'"):
+            self.assertIn(key, source)
+        self.assertNotIn('UIInterfaceOrientationPortrait', source)
+
 
 if __name__ == '__main__':
     unittest.main()

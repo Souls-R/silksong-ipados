@@ -12,13 +12,19 @@ extern "C" UIView* UnityGetGLView(void);
 // display mode (see NativeVirtualPad.h).
 static NSString* const PadModeKey = @"NativeVirtualPadMode";
 // Player-arranged layout, stored per control name as "dx,dy,size": the offset is
-// in canvas units and the size a multiplier on the default size.
+// a fraction of the canvas and the size a multiplier, so one saved layout keeps
+// its proportions on any screen size and aspect ratio.
 static NSString* const PadLayoutKey = @"NativeVirtualPadLayout";
 
-// Controls are laid out on a fixed 1194x834 canvas and scaled into the safe
-// area, so every iPad keeps identical proportions.
-static const CGFloat PadCanvasWidth = 1194;
-static const CGFloat PadCanvasHeight = 834;
+// Positions are authored on an iPad Pro 11" landscape safe area and mapped onto
+// whatever safe area the device actually has, so the pad fills a 4:3 iPad and a
+// tall phone screen instead of being letterboxed. Sizes keep a usable physical
+// size on small screens instead of shrinking with the display.
+static const CGFloat PadDesignWidth = 1194;
+static const CGFloat PadDesignHeight = 834;
+// A phone screen is less than half as tall as the design, so a bare ratio would
+// leave 25-point buttons; stop shrinking at three quarters.
+static const CGFloat PadMinFactor = 0.75;
 static const float PadDeadZone = 0.18f;
 static const CGFloat PadMinSize = 0.6;
 static const CGFloat PadMaxSize = 2.4;
@@ -184,8 +190,8 @@ static const PadButtonSpec PadButtons[] = {
 @property(nonatomic, strong) NativePadButton* done;
 @property(nonatomic, strong) NativePadButton* reset;
 @property(nonatomic, strong) NSMutableArray<UIView<NativePadPlaceable>*>* draggables;
-// Default frames in canvas coordinates, plus the player's saved offset (in the
-// same units) and size multiplier per control.
+// Default frames in design coordinates, plus the player's saved offset (a
+// fraction of the canvas) and size multiplier per control.
 @property(nonatomic, strong) NSMutableDictionary<NSString*, NSValue*>* baseFrames;
 @property(nonatomic, strong) NSMutableDictionary<NSString*, NSValue*>* offsets;
 @property(nonatomic, strong) NSMutableDictionary<NSString*, NSNumber*>* sizes;
@@ -197,6 +203,7 @@ static const PadButtonSpec PadButtons[] = {
 @property(nonatomic, strong) UIView<NativePadPlaceable>* pinchControl;
 @property(nonatomic) CGPoint grab;
 @property(nonatomic) CGFloat pinchBase;
+@property(nonatomic) CGSize canvasSize;
 @property(nonatomic) BOOL realDeviceInput;
 - (void)applyVisibility;
 - (void)releaseAll;
@@ -223,13 +230,16 @@ static const PadButtonSpec PadButtons[] = {
 {
     [super layoutSubviews];
     CGRect safe = UIEdgeInsetsInsetRect(self.bounds, self.safeAreaInsets);
-    if (safe.size.width < 1 || safe.size.height < 1) return;
-    // The canvas keeps its design size and is scaled into the safe area, so the
-    // pad lands the same way on every screen it was authored for.
-    CGFloat scale = MIN(safe.size.width / PadCanvasWidth, safe.size.height / PadCanvasHeight);
-    self.canvas.bounds = CGRectMake(0, 0, PadCanvasWidth, PadCanvasHeight);
+    CGSize size = safe.size;
+    if (size.width < 1 || size.height < 1) return;
+    BOOL changed = !CGSizeEqualToSize(size, self.canvasSize);
+    self.canvasSize = size;
+    // The canvas is exactly the safe area, so the pad fills whatever shape the
+    // screen has instead of being scaled into a fixed 4:3 box.
+    self.canvas.bounds = CGRectMake(0, 0, size.width, size.height);
     self.canvas.center = CGPointMake(CGRectGetMidX(safe), CGRectGetMidY(safe));
-    self.canvas.transform = CGAffineTransformMakeScale(scale, scale);
+    self.canvas.transform = CGAffineTransformIdentity;
+    if (changed) [self applyLayout];
 }
 // Touches on a control belong to the pad; everything else reaches the game.
 // While the editor is up the pad owns every touch, so nothing behind it reacts
@@ -367,6 +377,13 @@ static const PadButtonSpec PadButtons[] = {
     // Arranging is not playing: drop anything still held.
     if (editing) [self releaseAll];
 }
+// Controls keep a touchable physical size: positions follow the canvas, sizes
+// follow the screen but never shrink past PadMinFactor.
+- (CGFloat)scaleFactor
+{
+    CGFloat factor = MIN(self.canvasSize.width / PadDesignWidth, self.canvasSize.height / PadDesignHeight);
+    return factor < PadMinFactor ? PadMinFactor : factor;
+}
 - (CGFloat)sizeOf:(NSString*)name
 {
     NSNumber* stored = self.sizes[name];
@@ -377,29 +394,37 @@ static const PadButtonSpec PadButtons[] = {
 {
     NSValue* stored = self.offsets[name];
     if (!stored) return CGPointZero;
-    return stored.CGPointValue;
+    CGPoint fraction = stored.CGPointValue;
+    return CGPointMake(fraction.x * self.canvasSize.width, fraction.y * self.canvasSize.height);
 }
 - (void)applyLayout
 {
+    CGSize canvas = self.canvasSize;
+    if (canvas.width < 1 || canvas.height < 1) return;
+    CGFloat factor = [self scaleFactor];
+
     for (UIView<NativePadPlaceable>* control in self.draggables) {
-        CGRect base = [self.baseFrames[control.name] CGRectValue];
+        CGRect design = [self.baseFrames[control.name] CGRectValue];
         CGFloat size = [self sizeOf:control.name];
         CGPoint offset = [self offsetOf:control.name];
-        CGFloat width = base.size.width * size;
-        CGFloat height = base.size.height * size;
+        CGFloat width = design.size.width * factor * size;
+        CGFloat height = design.size.height * factor * size;
         float x, y;
-        NativeVirtualPadClampToCanvas(base.origin.x + offset.x, base.origin.y + offset.y,
-                                      width, height, PadCanvasWidth, PadCanvasHeight, &x, &y);
+        NativeVirtualPadClampToCanvas(design.origin.x / PadDesignWidth * canvas.width + offset.x,
+                                      design.origin.y / PadDesignHeight * canvas.height + offset.y,
+                                      width, height, canvas.width, canvas.height, &x, &y);
         control.frame = CGRectMake(x, y, width, height);
     }
 
-    // The editor chrome sits in the canvas corners, clear of the controls.
-    CGFloat room = (PadCanvasWidth - 3 * PadEditInset) / 2;
-    CGFloat buttonWidth = MIN(240, room > 0 ? room : 240);
-    self.reset.frame = CGRectMake(PadEditInset, PadEditInset, buttonWidth, 56);
-    self.done.frame = CGRectMake(PadCanvasWidth - PadEditInset - buttonWidth, PadEditInset, buttonWidth, 56);
+    // The editor chrome sits in the canvas corners, clear of the controls on any
+    // screen shape.
+    CGFloat buttonHeight = 56 * factor;
+    CGFloat room = (canvas.width - 3 * PadEditInset) / 2;
+    CGFloat buttonWidth = MIN(240 * factor, room > 0 ? room : 240 * factor);
+    self.reset.frame = CGRectMake(PadEditInset, PadEditInset, buttonWidth, buttonHeight);
+    self.done.frame = CGRectMake(canvas.width - PadEditInset - buttonWidth, PadEditInset, buttonWidth, buttonHeight);
     self.hint.frame = CGRectMake(PadEditInset, CGRectGetMaxY(self.reset.frame) + 10,
-                                 PadCanvasWidth - 2 * PadEditInset, 40);
+                                 canvas.width - 2 * PadEditInset, 40 * factor);
     self.scrim.frame = self.bounds;
 }
 - (void)loadLayout
@@ -426,8 +451,12 @@ static const PadButtonSpec PadButtons[] = {
 }
 - (void)storeOffset:(NSString*)name frame:(CGRect)frame
 {
-    CGRect base = [self.baseFrames[name] CGRectValue];
-    CGPoint offset = CGPointMake(frame.origin.x - base.origin.x, frame.origin.y - base.origin.y);
+    CGRect design = [self.baseFrames[name] CGRectValue];
+    CGSize canvas = self.canvasSize;
+    if (canvas.width < 1 || canvas.height < 1) return;
+    CGFloat baseX = design.origin.x / PadDesignWidth * canvas.width;
+    CGFloat baseY = design.origin.y / PadDesignHeight * canvas.height;
+    CGPoint offset = CGPointMake((frame.origin.x - baseX) / canvas.width, (frame.origin.y - baseY) / canvas.height);
     if (fabs(offset.x) < 1e-4 && fabs(offset.y) < 1e-4) [self.offsets removeObjectForKey:name];
     else self.offsets[name] = [NSValue valueWithCGPoint:offset];
 }
@@ -471,7 +500,7 @@ static const PadButtonSpec PadButtons[] = {
         float x, y;
         NativeVirtualPadClampToCanvas(point.x - self.grab.x, point.y - self.grab.y,
                                       CGRectGetWidth(frame), CGRectGetHeight(frame),
-                                      PadCanvasWidth, PadCanvasHeight, &x, &y);
+                                      self.canvasSize.width, self.canvasSize.height, &x, &y);
         control.frame = CGRectMake(x, y, CGRectGetWidth(frame), CGRectGetHeight(frame));
         return;
     }
