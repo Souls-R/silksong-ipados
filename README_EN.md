@@ -194,7 +194,7 @@ After installation, open Hollow Knight: Silksong in iPadOS Settings (under Apps 
 - Show Startup Details: display diagnostic text on screen.
 - On-Screen Gamepad: show on-screen gamepad controls, set to Auto, Always On, or Always Off, with positions adjusted on the notice page.
 
-The notice is shown by default. Set “On Next Launch” to “Go Straight to Game” on the notice page to skip it. Logs and the performance overlay are off by default.
+The notice is shown by default. Set “On Next Launch” to “Go Straight to Game” on the notice page to skip it. Logs and the performance overlay are off by default. The performance overlay can also be switched on the notice page; a change applies the next time the app starts.
 
 The on-screen gamepad defaults to Auto: it appears when you touch the screen during gameplay and hides as soon as an external keyboard, controller, or mouse reports input. The notice page changes it directly, and the choice survives restarts.
 

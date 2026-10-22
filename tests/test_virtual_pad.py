@@ -53,8 +53,8 @@ class VirtualPadTests(unittest.TestCase):
         # every launcher action stays inert while it owns the screen.
         self.assertIn('NativeVirtualPad_BeginEditing(', launch)
         self.assertIn('self.padEdit = [self button:Text(@"padEdit")', launch)
-        # Enter, retry, toggle, pad, editPad, home and the key handler.
-        self.assertEqual(launch.count('if (NativeVirtualPad_Editing()) return;'), 7)
+        # Enter, retry, toggle, pad, editPad, hud, home and the key handler.
+        self.assertEqual(launch.count('if (NativeVirtualPad_Editing()) return;'), 8)
         bootstrap = (REPO / 'src/runtime/NativeBootstrap.cs').read_text(encoding='utf-8')
         self.assertIn('host.AddComponent<NativeVirtualPad>()', bootstrap)
         pad = (REPO / 'src/runtime/NativeVirtualPad.mm').read_text(encoding='utf-8')

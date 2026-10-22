@@ -4,6 +4,8 @@
 #import <QuartzCore/QuartzCore.h>
 #include <math.h>
 #include "NativeVirtualPad.h"
+#include <stdlib.h>
+#include <string.h>
 
 extern "C" UIView* UnityGetGLView();
 
@@ -53,6 +55,9 @@ static UIFont* MenuFont(CGFloat size)
 @property(nonatomic, strong) UIButton* padChoice;
 @property(nonatomic, strong) UILabel* padValue;
 @property(nonatomic, strong) UIButton* padEdit;
+@property(nonatomic, strong) UIButton* hudChoice;
+@property(nonatomic, strong) UILabel* hudValue;
+@property(nonatomic, strong) UILabel* hudHint;
 @property(nonatomic, strong) UIImageView* leftCursor;
 @property(nonatomic, strong) UIImageView* rightCursor;
 @property(nonatomic, strong) CADisplayLink* controllerPoll;
@@ -190,6 +195,18 @@ static NativeLaunchView* LaunchView;
     self.padChoice.accessibilityLabel = Text(@"settingVirtualPad");
     self.padChoice.accessibilityValue = self.padValue.text;
 }
+- (void)syncHud
+{
+    BOOL enabled = [[NSUserDefaults standardUserDefaults] boolForKey:@"NativeMetalHUD"];
+    self.hudValue.text = Text(enabled ? @"hudOn" : @"hudOff");
+    self.hudChoice.accessibilityLabel = Text(@"settingHud");
+    self.hudChoice.accessibilityValue = self.hudValue.text;
+    // The overlay reads its environment when Metal starts, so a change made here
+    // only shows up after the next start; the hint says so until then.
+    const char* value = getenv("MTL_HUD_ENABLED");
+    BOOL running = value && strcmp(value, "1") == 0;
+    self.hudHint.text = Text(running == enabled ? @"noticeHelp" : @"hudRestart");
+}
 - (void)showPage:(int)page detail:(NSString*)detail
 {
     [self stop];
@@ -201,6 +218,9 @@ static NativeLaunchView* LaunchView;
     self.padChoice = nil;
     self.padValue = nil;
     self.padEdit = nil;
+    self.hudChoice = nil;
+    self.hudValue = nil;
+    self.hudHint = nil;
     self.selection = 0;
     for (UIView* view in self.canvas.subviews) [view removeFromSuperview];
     for (CALayer* layer in [self.canvas.layer.sublayers copy]) [layer removeFromSuperlayer];
@@ -212,11 +232,11 @@ static NativeLaunchView* LaunchView;
     }
     [self background];
     if (page == 1) {
-        [self title:Text(@"noticeTitle") y:162];
-        [self label:Text(@"noticeFree") x:157 y:298 w:880 h:62 size:21 color:UIColor.whiteColor];
-        [self label:Text(@"noticeResale") x:157 y:369 w:880 h:76 size:21 color:body];
-        UIButton* enter = [self button:Text(@"enterGame") y:463 action:@selector(enter:)];
-        self.nextLaunch = [self button:@"" y:526 action:@selector(toggle:)];
+        [self title:Text(@"noticeTitle") y:132];
+        [self label:Text(@"noticeFree") x:157 y:250 w:880 h:62 size:21 color:UIColor.whiteColor];
+        [self label:Text(@"noticeResale") x:157 y:316 w:880 h:76 size:21 color:body];
+        UIButton* enter = [self button:Text(@"enterGame") y:398 action:@selector(enter:)];
+        self.nextLaunch = [self button:@"" y:461 action:@selector(toggle:)];
         UILabel* label = [[UILabel alloc] initWithFrame:[self scaledX:25 y:0 w:250 h:54]];
         label.font = MenuFont(22 * self.fontScale); label.textColor = body; label.text = Text(@"nextLaunch");
         [self.nextLaunch addSubview:label];
@@ -225,7 +245,7 @@ static NativeLaunchView* LaunchView;
         self.nextValue.textAlignment = NSTextAlignmentRight;
         [self.nextLaunch addSubview:self.nextValue];
         [self syncChoice];
-        self.padChoice = [self button:@"" y:589 action:@selector(pad:)];
+        self.padChoice = [self button:@"" y:524 action:@selector(pad:)];
         UILabel* padLabel = [[UILabel alloc] initWithFrame:[self scaledX:25 y:0 w:250 h:54]];
         padLabel.font = MenuFont(22 * self.fontScale); padLabel.textColor = body; padLabel.text = Text(@"settingVirtualPad");
         [self.padChoice addSubview:padLabel];
@@ -234,11 +254,22 @@ static NativeLaunchView* LaunchView;
         self.padValue.textAlignment = NSTextAlignmentRight;
         [self.padChoice addSubview:self.padValue];
         [self syncPad];
-        self.padEdit = [self button:Text(@"padEdit") y:652 action:@selector(editPad:)];
-        [self label:Text(@"noticeHelp") x:117 y:706 w:960 h:40 size:15 color:[UIColor colorWithWhite:.65 alpha:1]];
+        self.padEdit = [self button:Text(@"padEdit") y:587 action:@selector(editPad:)];
+        self.hudChoice = [self button:@"" y:650 action:@selector(hud:)];
+        UILabel* hudLabel = [[UILabel alloc] initWithFrame:[self scaledX:25 y:0 w:250 h:54]];
+        hudLabel.font = MenuFont(22 * self.fontScale); hudLabel.textColor = body; hudLabel.text = Text(@"settingHud");
+        [self.hudChoice addSubview:hudLabel];
+        self.hudValue = [[UILabel alloc] initWithFrame:[self scaledX:255 y:0 w:280 h:54]];
+        self.hudValue.font = MenuFont(22 * self.fontScale); self.hudValue.textColor = body;
+        self.hudValue.textAlignment = NSTextAlignmentRight;
+        [self.hudChoice addSubview:self.hudValue];
+        // One shared hint line: the Settings pointer normally, the restart note
+        // while the HUD choice has not been picked up yet.
+        self.hudHint = [self label:Text(@"noticeHelp") x:117 y:710 w:960 h:34 size:15 color:[UIColor colorWithWhite:.65 alpha:1]];
+        [self syncHud];
         UIButton* home = [self button:Text(@"projectHome") y:750 action:@selector(home:)];
         home.titleLabel.font = MenuFont(16 * self.fontScale);
-        self.choices = @[enter, self.nextLaunch, self.padChoice, self.padEdit, home];
+        self.choices = @[enter, self.nextLaunch, self.padChoice, self.padEdit, self.hudChoice, home];
     } else {
         [self title:Text(page == 2 ? @"missingTitle" : (page == 6 ? @"startupErrorTitle" : @"loadErrorTitle")) y:122];
         NSString* introduction = [NSString stringWithFormat:@"%@\n%@", Text(@"missingIntro"), Text(@"missingInstruction")];
@@ -289,6 +320,7 @@ static NativeLaunchView* LaunchView;
     else if ([command.input isEqualToString:UIKeyInputLeftArrow] || [command.input isEqualToString:UIKeyInputRightArrow]) {
         if (self.choices.count && self.choices[self.selection] == self.nextLaunch) [self toggle:nil];
         else if (self.choices.count && self.choices[self.selection] == self.padChoice) [self pad:nil];
+        else if (self.choices.count && self.choices[self.selection] == self.hudChoice) [self hud:nil];
     } else if (self.choices.count) [self.choices[self.selection] sendActionsForControlEvents:UIControlEventTouchUpInside];
 }
 - (unsigned)controllerButtons
@@ -316,6 +348,7 @@ static NativeLaunchView* LaunchView;
     if (pressed & 4) {
         if (self.choices.count && self.choices[self.selection] == self.nextLaunch) [self toggle:nil];
         else if (self.choices.count && self.choices[self.selection] == self.padChoice) [self pad:nil];
+        else if (self.choices.count && self.choices[self.selection] == self.hudChoice) [self hud:nil];
     }
     if ((pressed & 8) && self.choices.count) [self.choices[self.selection] sendActionsForControlEvents:UIControlEventTouchUpInside];
 }
@@ -342,6 +375,15 @@ static NativeLaunchView* LaunchView;
     if (NativeVirtualPad_Editing()) return;
     NativeVirtualPad_BeginEditing(Text(@"padEditDone").UTF8String, Text(@"padEditReset").UTF8String,
                                   Text(@"padEditHint").UTF8String);
+}
+- (void)hud:(id)sender
+{
+    if (NativeVirtualPad_Editing()) return;
+    // Same preference the generated startup code reads before Unity loads Metal,
+    // so the row and the system Settings switch stay in sync.
+    NSUserDefaults* settings = NSUserDefaults.standardUserDefaults;
+    [settings setBool:![settings boolForKey:@"NativeMetalHUD"] forKey:@"NativeMetalHUD"];
+    [self syncHud];
 }
 - (void)home:(id)sender
 {
