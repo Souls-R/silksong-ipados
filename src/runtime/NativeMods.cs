@@ -22,12 +22,12 @@ public static class NativeMods
         Ready = false;
         string embedded = Path.Combine(Application.streamingAssetsPath, "native-mod-index.json");
         if (!File.Exists(embedded)) return;
-        string root = Path.Combine(Application.persistentDataPath, "Mods");
+        string root = Path.Combine(NativeModPaths.Root, "Mods");
         try
         {
             if (!Directory.Exists(root) || File.Exists(Path.Combine(root, "disabled.txt")))
             {
-                Debug.Log("[NativeMods] Disabled or data absent; using original game");
+                Debug.Log("[NativeMods] Compiled plugins disabled or data absent");
                 return;
             }
             var contract = JsonUtility.FromJson<Contract>(File.ReadAllText(embedded));
@@ -41,7 +41,7 @@ public static class NativeMods
                     throw new InvalidDataException("Missing or incompatible mod file: " + file.path);
             }
             Ready = true;
-            Debug.Log("[NativeMods] Compiled plugin data accepted");
+            Debug.Log("[NativeMods] Compiled plugin data accepted: " + root);
         }
         catch (Exception ex)
         {
@@ -62,5 +62,20 @@ public static class NativeMods
             Debug.Log("[NativeMods] Compiled plugins started");
         }
         catch (Exception ex) { Debug.LogWarning("[NativeMods] Plugin startup failed: " + ex); }
+    }
+}
+
+internal static class NativeModPaths
+{
+    // Files creates this enclosing folder when uncompressing SilksongMods.zip.
+    // Selecting one container prevents mixing a new pack with stale loose data.
+    public static string Root
+    {
+        get
+        {
+            string documents = Application.persistentDataPath;
+            string combined = Path.Combine(documents, "SilksongMods");
+            return Directory.Exists(combined) ? combined : documents;
+        }
     }
 }

@@ -5,7 +5,17 @@ namespace BepInEx
 {
     public static class Paths
     {
-        public static string BepInExRootPath { get { return Path.Combine(UnityEngine.Application.persistentDataPath, "Mods"); } }
+        public static string BepInExRootPath
+        {
+            get
+            {
+                // This shim is compiled before NativeCompatibility; use the
+                // same container rule without a circular assembly reference.
+                string documents = UnityEngine.Application.persistentDataPath;
+                string combined = Path.Combine(documents, "SilksongMods");
+                return Path.Combine(Directory.Exists(combined) ? combined : documents, "Mods");
+            }
+        }
         public static string PluginPath { get { return Path.Combine(BepInExRootPath, "plugins"); } }
         public static string ConfigPath { get { return Path.Combine(BepInExRootPath, "config"); } }
         public static string CachePath { get { return Path.Combine(BepInExRootPath, "cache"); } }

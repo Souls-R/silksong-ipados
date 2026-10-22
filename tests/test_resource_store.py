@@ -14,7 +14,7 @@ from scripts.common import REPO
 class RuntimeResourceStore(unittest.TestCase):
     def test_skins_change_without_ipa_rebuild_and_plugins_are_independent(self):
         self.run_csharp(['src/runtime/NativeResourceStore.cs', 'src/runtime/NativeMods.cs',
-                         'src/runtime/NativeSkin.cs', 'tests/ModTests.cs'])
+                         'src/runtime/NativeSkin.cs', 'src/mods/Paths.cs', 'tests/ModTests.cs'])
 
     def test_application_pause_is_idempotent_and_preserves_menus(self):
         self.run_csharp(['src/runtime/NativeAutoPause.cs', 'tests/AutoPauseTests.cs'])

@@ -4,7 +4,7 @@ using System.Text.Json;
 
 namespace UnityEngine
 {
-    public static class Application { public static string persistentDataPath, streamingAssetsPath; }
+    public static class Application { public static string persistentDataPath, streamingAssetsPath, dataPath, productName; }
     public static class Debug { public static void Log(object message) {} public static void LogWarning(object message) {} }
     public static class JsonUtility
     {
@@ -108,5 +108,34 @@ static class ModTests
         File.WriteAllText(embedded, pluginContract.Replace("plugins/data", "../escape"));
         install();
         Check(!NativeMods.Ready && resolve("a.bundle") == a, "invalid plugin path does not disable skin");
+
+        // Model Files uncompressing a two-folder archive into SilksongMods.
+        File.WriteAllText(embedded, pluginContract);
+        string combined = Path.Combine(UnityEngine.Application.persistentDataPath, "SilksongMods");
+        string combinedSkin = Path.Combine(combined, "SilksongSkin");
+        string combinedMods = Path.Combine(combined, "Mods");
+        Directory.CreateDirectory(Path.Combine(combinedSkin, "bundles"));
+        Directory.CreateDirectory(Path.Combine(combinedMods, "plugins"));
+        string combinedB = Path.GetFullPath(Path.Combine(combinedSkin, "bundles/b.bundle"));
+        File.WriteAllText(combinedB, "12345");
+        File.WriteAllText(Path.Combine(combinedSkin, "skin.json"), skinB);
+        File.WriteAllText(Path.Combine(combinedMods, "plugins/data"), "hp");
+        install();
+        Check(NativeMods.Ready && NativeSkin.ActiveName == "Skin B" && resolve("b.bundle") == combinedB,
+              "Files extraction container is loaded directly");
+        Check(BepInEx.Paths.BepInExRootPath == combinedMods && resolve("a.bundle") == "original",
+              "shim sidecars/config and loader select the same container; loose data ignored");
+        File.WriteAllText(Path.Combine(combinedSkin, "skin.json"), "{");
+        install();
+        Check(NativeMods.Ready && NativeSkin.ActiveName == null && resolve("a.bundle") == "original",
+              "bad combined skin does not silently load a stale loose skin");
+        File.WriteAllText(Path.Combine(combinedSkin, "skin.json"), skinB);
+        File.WriteAllText(Path.Combine(combinedMods, "disabled.txt"), "");
+        install();
+        Check(!NativeMods.Ready && resolve("b.bundle") == combinedB, "combined skin and HP remain independent");
+        Directory.Move(combined, Path.Combine(root, "removed-combined-pack"));
+        install();
+        Check(NativeMods.Ready && resolve("a.bundle") == a && BepInEx.Paths.BepInExRootPath == mods,
+              "removing combined pack restores standalone directories");
     }
 }

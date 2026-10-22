@@ -23,6 +23,7 @@ python3 build.py native        编译未签名 IPA
 python3 build.py resource-zip   打包资源 ZIP
 python3 build.py mod-pack       准备血条 Mod
 python3 build.py skin-pack      准备独立皮肤包
+python3 build.py mods-zip       合并皮肤与血条数据供“文件”App 解压
 ```
 
 运行对应命令的 `--help` 查看参数。
@@ -238,6 +239,35 @@ Documents/
 HPBarPro 的插件和 Harmony 钩子在编译前静态写入程序集，再一起交给 IL2CPP；
 皮肤导入器按原集合名、材质和纹理名定位资源，生成压缩的 iOS 纹理覆盖包。
 不需要在 iPad 安装桌面 BepInEx，也不能在运行时直接丢入任意 DLL。
+
+支持合并包的 IPA（测试 build 34 起）可直接配合 `SilksongMods.zip` 使用：
+退出游戏，将 ZIP 放到“文件”App 中丝之歌的根目录，点击解压，再启动游戏。
+请保留 ZIP 文件名 `SilksongMods.zip`；“文件”App 新建的同名目录就是加载位置：
+
+```text
+Documents/
+  SilksongResources-v1/       原资源包，继续复用
+  SilksongMods/
+    SilksongSkin/
+      skin.json
+      bundles/
+    Mods/
+      plugins/Silk_HpBarPro/
+      config/                首次运行时生成
+```
+
+合并 ZIP 里只有 `SilksongSkin` 和 `Mods` 两个顶层目录，不要再手动包一层 `SilksongMods`。
+若已有同名解压目录，应先将旧目录移走，避免系统生成 `SilksongMods 2`。
+更换皮肤只需替换 `SilksongMods/SilksongSkin` 并重启；血条配置位于同容器的 `Mods/config/`。
+移走整个 `SilksongMods` 后，游戏继续读取原来的独立 `SilksongSkin`、`Mods` 目录。
+存在合并目录时只从该目录加载 Mod 数据，避免与旧的独立数据混用。
+
+可将已转换的两个数据包合并，过程无需重编 IPA：
+
+```sh
+python3 build.py mods-zip --skin-pack /path/to/SilksongSkin-ios.zip \
+  --hpbar-pack /path/to/SilksongMods-hpbar-ios.zip --output /path/to/SilksongMods.zip
+```
 
 ```sh
 python3 build.py mod-pack --game-data /path/to/Data \

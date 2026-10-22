@@ -42,6 +42,10 @@ def main():
     skin.add_argument('--skin', type=Path, required=True, help='Active skin folder containing active.txt')
     skin.add_argument('--output', type=Path, required=True)
     skin.add_argument('--jobs', type=int, choices=range(1, 5), default=2)
+    mods_zip = commands.add_parser('mods-zip', help='Combine converted skin and HP data for Files extraction')
+    mods_zip.add_argument('--skin-pack', type=Path, required=True)
+    mods_zip.add_argument('--hpbar-pack', type=Path, required=True)
+    mods_zip.add_argument('--output', type=Path, required=True, help='Output named SilksongMods.zip')
     native = commands.add_parser('native', help='Compile and package the prepared project on macOS')
     native.add_argument('--work', type=Path, required=True)
     native.add_argument('--jobs', type=int, choices=range(1, 33), default=6)
@@ -65,6 +69,9 @@ def main():
         elif args.command == 'skin-pack':
             from scripts.mod_skins import prepare_skin_pack
             prepare_skin_pack(args)
+        elif args.command == 'mods-zip':
+            from scripts.mod_archive import zip_mods
+            zip_mods(args)
         else:
             from scripts.resources import zip_resources
             zip_resources(args)

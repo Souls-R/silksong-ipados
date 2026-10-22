@@ -22,7 +22,7 @@ public static class NativeSkin
     {
         entries.Clear();
         ActiveName = null;
-        string root = Path.Combine(Application.persistentDataPath, "SilksongSkin");
+        string root = Path.Combine(NativeModPaths.Root, "SilksongSkin");
         if (!Directory.Exists(root) || File.Exists(Path.Combine(root, "disabled.txt"))) return;
         try
         {

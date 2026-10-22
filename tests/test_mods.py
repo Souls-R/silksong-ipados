@@ -6,9 +6,36 @@ import zipfile
 
 from scripts.mods import safe_path
 from scripts.mod_skins import normalized, match_skin, package_skin
+from scripts.mod_archive import zip_mods
+from types import SimpleNamespace
 
 
 class ModImportTests(unittest.TestCase):
+    def test_files_combined_zip_has_two_roots_and_no_extra_enclosing_folder(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            skin = root / 'skin.zip'
+            hpbar = root / 'hpbar.zip'
+            with zipfile.ZipFile(skin, 'w') as archive:
+                archive.writestr('SilksongSkin/skin.json', json.dumps(dict(schema=1, name='Skin A',
+                    compatibility='v1', bundles=[dict(bundle='hero.bundle', bytes=4)])))
+                archive.writestr('SilksongSkin/bundles/hero.bundle', b'hero')
+            with zipfile.ZipFile(hpbar, 'w') as archive:
+                archive.writestr('Mods/mod-info.json', json.dumps(dict(schema=2, compatibility='v1')))
+                archive.writestr('Mods/plugins/Silk_HpBarPro/healthbar_pro', b'hp')
+            output = zip_mods(SimpleNamespace(skin_pack=skin, hpbar_pack=hpbar, output=root/'SilksongMods.zip'))
+            with zipfile.ZipFile(output) as archive:
+                self.assertEqual({name.split('/')[0] for name in archive.namelist()}, {'SilksongSkin', 'Mods'})
+                self.assertEqual(archive.read('SilksongSkin/bundles/hero.bundle'), b'hero')
+                self.assertEqual(archive.read('Mods/plugins/Silk_HpBarPro/healthbar_pro'), b'hp')
+            with self.assertRaises(ValueError):
+                zip_mods(SimpleNamespace(skin_pack=skin, hpbar_pack=hpbar, output=root/'Renamed.zip'))
+            with zipfile.ZipFile(hpbar, 'w') as archive:
+                archive.writestr('Mods/mod-info.json', json.dumps(dict(schema=2, compatibility='v2')))
+                archive.writestr('Mods/plugins/Silk_HpBarPro/healthbar_pro', b'hp')
+            with self.assertRaises(ValueError):
+                zip_mods(SimpleNamespace(skin_pack=skin, hpbar_pack=hpbar, output=root/'other/SilksongMods.zip'))
+
     def test_standalone_skin_contains_no_plugin_contract_and_excludes_leftovers(self):
         with tempfile.TemporaryDirectory() as tmp:
             output = Path(tmp)

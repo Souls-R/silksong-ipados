@@ -23,6 +23,7 @@ python3 build.py native        Build an unsigned IPA
 python3 build.py resource-zip   Package resources as a ZIP
 python3 build.py mod-pack       Prepare the HP bar mod
 python3 build.py skin-pack      Prepare an independent skin pack
+python3 build.py mods-zip       Combine skin and HP data for Files extraction
 ```
 
 Run any command with `--help` to see its options.
@@ -233,6 +234,20 @@ Current release: **0.8.1 / build 29 test version**.
 Before using a mouse, turn off **Settings → Accessibility → Touch → AssistiveTouch** on your iPad to prevent left clicks from being converted into screen taps.
 
 ## Optional Mods (Experimental Branch)
+
+For IPAs supporting combined packs (test build 34 onward), quit the game, put `SilksongMods.zip`
+in the game's Files root, tap it to uncompress, and restart. Keep that exact ZIP filename.
+Files creates `Documents/SilksongMods/`, containing `SilksongSkin/` and `Mods/`.
+The ZIP itself has those two top-level folders; do not add another enclosing folder.
+Keep the original `SilksongResources-v1` resource pack and saves. If an extraction folder already
+exists, move it aside first so Files does not create `SilksongMods 2`.
+Replace `SilksongMods/SilksongSkin` to change skins; HP configuration is in the same container's
+`Mods/config/`. Removing the combined folder restores support for the old standalone folders.
+When the combined folder exists, it takes precedence without mixing in stale loose data.
+
+Create a combined archive from converted packs using
+`build.py mods-zip --skin-pack <skin.zip> --hpbar-pack <hpbar.zip> --output <SilksongMods.zip>`.
+Creating or replacing these data packs does not require rebuilding a compatible IPA.
 
 HPBarPro 1.0.4 and PNG skins using Customizer / CustomizerT2D naming are supported experimentally.
 Plugins and supported Harmony hooks are woven before IL2CPP compilation; skins become compressed
