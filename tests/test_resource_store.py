@@ -12,6 +12,12 @@ from scripts.common import REPO
 
 
 class RuntimeResourceStore(unittest.TestCase):
+    def test_application_pause_is_idempotent_and_preserves_menus(self):
+        self.run_csharp(['src/runtime/NativeAutoPause.cs', 'tests/AutoPauseTests.cs'])
+
+    def test_native_ps_touchpad_input_boundary(self):
+        self.run_csharp(['src/runtime/NativeControllerInput.cs', 'tests/ControllerInputTests.cs'])
+
     def test_mouse_menu_and_real_finger_input(self):
         self.run_csharp(['src/runtime/NativeMouseUI.cs', 'src/runtime/NativeBindingPointerGate.cs', 'tests/MouseUITests.cs'])
 

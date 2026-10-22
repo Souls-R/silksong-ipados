@@ -118,6 +118,7 @@ public sealed class NativeBootstrap : MonoBehaviour
         var host = new GameObject("NativeCompatibilityBoundary");
         DontDestroyOnLoad(host);
         instance = host.AddComponent<NativeBootstrap>();
+        host.AddComponent<NativeAutoPause>();
         host.AddComponent<NativeDisplaySettings>();
         host.AddComponent<NativeAnimatorCompatibility>();
         host.AddComponent<NativeVirtualPad>();

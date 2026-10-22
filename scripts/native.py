@@ -45,7 +45,7 @@ def inspect_ipa(ipa, manifest):
             settings = plistlib.loads(archive.read(prefix + 'Settings.bundle/Root.plist'))
             keys = {item['Key'] for item in settings['PreferenceSpecifiers'] if 'Key' in item}
             if keys != {'NativeShowNotice', 'NativeRecheckResources', 'NativeDiagnosticLogs',
-                        'NativeMetalHUD', 'NativeStartupDetails'}:
+                        'NativeMetalHUD', 'NativeStartupDetails', 'NativeVirtualPadMode'}:
                 raise ValueError('Unexpected startup settings')
     return dict(version=manifest['version'], build=manifest['build'], bytes=ipa.stat().st_size,
                 resource_storage='documents', embedded_large_bundles=0, device_verified=False)

@@ -23,6 +23,7 @@ public static class NativeInputCompatibility
         InputSystem.RegisterLayout(typeof(DualShock4GampadiOS), "DualShock4GampadiOS", matches: Matcher().WithProduct("DUALSHOCK 4 Wireless Controller"));
         InputSystem.RegisterLayout(typeof(DualSenseGampadiOS), "DualSenseGampadiOS", matches: Matcher().WithProduct("DualSense Wireless Controller"));
         InputSystem.settings.updateMode = InputSettings.UpdateMode.ProcessEventsInDynamicUpdate;
+        NativeControllerInput.Install();
         NativeControllerHaptics.Install();
         InputSystem.onDeviceChange += DeviceChanged;
         foreach (var device in InputSystem.devices) Describe(device, "present");

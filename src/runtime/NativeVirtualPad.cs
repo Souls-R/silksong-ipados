@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Layouts;
-using UnityEngine.InputSystem.LowLevel;
+using UnityEngine.InputSystem.iOS.LowLevel;
 using InputDevice = UnityEngine.InputSystem.InputDevice;
 
 // The on-screen pad is a gamepad, never a keyboard. A synthetic iOS gamepad is
@@ -70,7 +70,7 @@ public sealed class NativeVirtualPad : MonoBehaviour
         if (NativePreferences.CompatibilityLogs) Debug.Log("NATIVE_PAD: virtual iOS gamepad removed");
     }
 
-    static void YieldToRealDevice()
+    void YieldToRealDevice()
     {
 #if UNITY_IOS && !UNITY_EDITOR
         var keyboard = Keyboard.current;
@@ -78,32 +78,36 @@ public sealed class NativeVirtualPad : MonoBehaviour
         foreach (var other in InputSystem.devices)
         {
             // Screen touches are the pad's own input path, not a real device.
-            if (other == null || other is Touchscreen || !other.wasUpdatedThisFrame) continue;
+            if (other == null || other == device || other is Touchscreen || !other.wasUpdatedThisFrame) continue;
             NativeVirtualPad_RealDeviceInput();
             return;
         }
 #endif
     }
 
-    static GamepadState State(int buttons, Vector2 stick)
+    static iOSGameControllerState State(int buttons, Vector2 stick)
     {
-        var state = new GamepadState(stick, Vector2.zero,
-            (buttons & LeftTrigger) != 0 ? 1f : 0f, (buttons & RightTrigger) != 0 ? 1f : 0f);
-        state = Button(state, buttons, DpadUp, GamepadButton.DpadUp);
-        state = Button(state, buttons, DpadDown, GamepadButton.DpadDown);
-        state = Button(state, buttons, DpadLeft, GamepadButton.DpadLeft);
-        state = Button(state, buttons, DpadRight, GamepadButton.DpadRight);
-        state = Button(state, buttons, South, GamepadButton.South);
-        state = Button(state, buttons, East, GamepadButton.East);
-        state = Button(state, buttons, West, GamepadButton.West);
-        state = Button(state, buttons, North, GamepadButton.North);
-        state = Button(state, buttons, LeftShoulder, GamepadButton.LeftShoulder);
-        state = Button(state, buttons, RightShoulder, GamepadButton.RightShoulder);
-        state = Button(state, buttons, Select, GamepadButton.Select);
-        return Button(state, buttons, Start, GamepadButton.Start);
+        // The registered iOSGameController device expects IGC state events.
+        var state = new iOSGameControllerState()
+            .WithAxis(iOSAxis.LeftStickX, stick.x)
+            .WithAxis(iOSAxis.LeftStickY, stick.y);
+        state = Button(state, buttons, LeftTrigger, iOSButton.LeftTrigger);
+        state = Button(state, buttons, RightTrigger, iOSButton.RightTrigger);
+        state = Button(state, buttons, DpadUp, iOSButton.DpadUp);
+        state = Button(state, buttons, DpadDown, iOSButton.DpadDown);
+        state = Button(state, buttons, DpadLeft, iOSButton.DpadLeft);
+        state = Button(state, buttons, DpadRight, iOSButton.DpadRight);
+        state = Button(state, buttons, South, iOSButton.A);
+        state = Button(state, buttons, East, iOSButton.B);
+        state = Button(state, buttons, West, iOSButton.X);
+        state = Button(state, buttons, North, iOSButton.Y);
+        state = Button(state, buttons, LeftShoulder, iOSButton.LeftShoulder);
+        state = Button(state, buttons, RightShoulder, iOSButton.RightShoulder);
+        state = Button(state, buttons, Select, iOSButton.Select);
+        return Button(state, buttons, Start, iOSButton.Start);
     }
 
-    static GamepadState Button(GamepadState state, int buttons, int mask, GamepadButton button)
+    static iOSGameControllerState Button(iOSGameControllerState state, int buttons, int mask, iOSButton button)
     {
         return (buttons & mask) != 0 ? state.WithButton(button) : state;
     }

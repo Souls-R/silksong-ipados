@@ -56,12 +56,12 @@ app.resources_build_phase.add_file_reference(data) unless app.resources_build_ph
 end
 reg = p.files.find { |f| f.path == 'Libraries/RegisterModules.cpp' } || p.main_group.new_file('Libraries/RegisterModules.cpp', 'SOURCE_ROOT')
 framework.source_build_phase.add_file_reference(reg) unless framework.source_build_phase.files_references.include?(reg)
-%w[NativeKeyboard.mm NativeMouse.mm NativeLaunch.mm NativeHaptics.mm NativeVirtualPad.mm].each do |name|
+%w[NativeKeyboard.mm NativeMouse.mm NativeControllerInput.mm NativeLaunch.mm NativeHaptics.mm NativeVirtualPad.mm].each do |name|
   if File.exist?(File.join(root, 'Libraries', name))
     path = 'Libraries/' + name
     ref = p.files.find { |f| f.path == path } || p.main_group.new_file(path, 'SOURCE_ROOT')
     build = framework.source_build_phase.files.find { |f| f.file_ref == ref } || framework.source_build_phase.add_file_reference(ref)
-    build.settings = {'COMPILER_FLAGS' => '-fobjc-arc'} if ['NativeLaunch.mm', 'NativeHaptics.mm', 'NativeMouse.mm', 'NativeVirtualPad.mm'].include?(name)
+    build.settings = {'COMPILER_FLAGS' => '-fobjc-arc'} if ['NativeLaunch.mm', 'NativeHaptics.mm', 'NativeMouse.mm', 'NativeControllerInput.mm', 'NativeVirtualPad.mm'].include?(name)
   end
 end
 %w[NativeIcons.xcassets Settings.bundle].each do |path|
