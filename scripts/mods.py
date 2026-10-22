@@ -5,7 +5,6 @@ import os
 from pathlib import Path
 import subprocess
 import zipfile
-from concurrent.futures import ProcessPoolExecutor
 
 from .common import REPO, run, read_json, write_json
 
@@ -33,7 +32,9 @@ def compile_shims(compiler, managed, work):
 def weave_plugins(source, managed, work, compiler, dotnet='dotnet', weaver=None):
     source = source.resolve()
     plan = read_json(source / 'mod-plan.json')
-    if plan.get('schema') != 1 or not plan.get('plugins'):
+    if (plan.get('schema') != 2 or not plan.get('plugins')
+            or plan.get('contract', {}).get('schema') != 2
+            or 'overrides' in plan['contract']):
         raise ValueError('Invalid mod plan')
     compile_shims(compiler, managed, work)
     project = REPO / 'tools/ModWeaver/ModWeaver.csproj'
@@ -81,22 +82,32 @@ def safe_path(root, relative):
     return result
 
 
-def prepare_mod_pack(args, metadata=None):
-    from .common import PACK_FOLDER, output_directory
-    from .mod_skins import scan_metadata, match_skin, overlay_bundle
-    from .texture_conversion import convert_bundle
-    game, skin, hpbar, resources = [p.expanduser().resolve() for p in
-                                  (args.game_data, args.skin, args.hpbar, args.resources)]
-    output = output_directory(args.output, game, skin, hpbar, resources)
-    if output.exists():
-        raise ValueError('Use a fresh mod output directory')
+def converted_index(resources):
+    from .common import PACK_FOLDER, UNITY_VERSION, RESOURCE_REVISION
+    from .resources import validate_index
     if resources.is_file():
         with zipfile.ZipFile(resources) as archive:
             index = json.loads(archive.read(PACK_FOLDER + '/resource-index.json'))
     else:
         index = read_json(resources / PACK_FOLDER / 'resource-index.json')
-    if ':ios-r2:' not in index['pack']['compatibility']:
+    validate_index(index)
+    if not index['pack']['compatibility'].startswith(f'{UNITY_VERSION}:ios-r{RESOURCE_REVISION}:'):
         raise ValueError('Mods require converted iOS resources')
+    return index
+
+
+def prepare_mod_pack(args):
+    from .common import output_directory
+    from .texture_conversion import convert_bundle
+    game, hpbar, resources = [p.expanduser().resolve() for p in
+                             (args.game_data, args.hpbar, args.resources)]
+    inputs_to_protect = [game, hpbar, resources]
+    if getattr(args, 'skin', None):
+        inputs_to_protect.append(args.skin)
+    output = output_directory(args.output, *inputs_to_protect)
+    if output.exists():
+        raise ValueError('Use a fresh mod output directory')
+    index = converted_index(resources)
     output.mkdir(parents=True)
     inputs = output / 'inputs'
     inputs.mkdir()
@@ -113,34 +124,25 @@ def prepare_mod_pack(args, metadata=None):
     mods = output / 'data/Mods'
     bundle = mods / 'plugins/Silk_HpBarPro/healthbar_pro'
     convert_bundle(inputs / 'healthbar_pro', bundle, output / 'hpbar-conversion.json')
-    metadata = metadata if metadata is not None else scan_metadata(game, output / 'skin-metadata.json')
-    selections, pngs = match_skin(skin, metadata)
-    known = {r['bundle'] for r in index['bundles']}
-    if set(selections) - known:
-        raise ValueError('Skin textures do not match converted resource catalog')
-    jobs = [(str(resources), str(mods / 'overrides'), name, rows) for name, rows in sorted(selections.items())]
-    results = []
-    with ProcessPoolExecutor(max_workers=args.jobs) as pool:
-        for row in pool.map(overlay_bundle, jobs):
-            results.append(row)
-            print(f'Skin: {len(results)}/{len(jobs)} bundles ({row["bundle"]})', flush=True)
-    write_json(output / 'skin-conversion.json', dict(pngs=pngs, bundles=results))
-    # The exact data contract travels in the IPA. Files contain no executable DLLs.
-    contract = dict(schema=1, compatibility=index['pack']['compatibility'],
-        files=[dict(path='plugins/Silk_HpBarPro/healthbar_pro', bytes=bundle.stat().st_size)],
-        overrides=[dict(bundle=r['bundle'], bytes=r['bytes']) for r in results])
-    write_json(inputs / 'mod-plan.json', dict(schema=1, plugins=[dict(file='Silk_HpBarPro.dll',
+    # Compiled plugin data only. No skin name, file list or size is baked in.
+    contract = dict(schema=2, compatibility=index['pack']['compatibility'],
+        files=[dict(path='plugins/Silk_HpBarPro/healthbar_pro', bytes=bundle.stat().st_size)])
+    write_json(inputs / 'mod-plan.json', dict(schema=2, plugins=[dict(file='Silk_HpBarPro.dll',
         sha256=sha256(inputs / 'Silk_HpBarPro.dll'))], contract=contract))
-    write_json(mods / 'mod-info.json', dict(schema=1, compatibility=contract['compatibility'],
-        skin=skin.name, skin_pngs=pngs, healthbar='HPBarPro 1.0.4', restart_required=True))
-    archive_path = output / 'SilksongMods-skin-hpbar-ios.zip'
+    write_json(mods / 'mod-info.json', dict(schema=2, compatibility=contract['compatibility'],
+        healthbar='HPBarPro 1.0.4', restart_required=True))
+    archive_path = output / 'SilksongMods-hpbar-ios.zip'
     with zipfile.ZipFile(archive_path, 'w', zipfile.ZIP_DEFLATED, compresslevel=1) as archive:
         for path in sorted(mods.rglob('*')):
             if path.is_file():
                 archive.write(path, path.relative_to(mods.parent).as_posix())
-    write_json(output / 'mod-pack-report.json', dict(schema=1, skin_pngs=pngs,
-        skin_textures=sum(len(r['textures']) for r in results), skin_bundles=len(results),
+    write_json(output / 'mod-pack-report.json', dict(schema=2,
         bytes=archive_path.stat().st_size, sha256=sha256(archive_path), contract=contract,
         device_verified=False))
     print('Mod data: ' + str(archive_path))
     print('Build with: prepare --mods "' + str(inputs) + '" ...')
+    if getattr(args, 'skin', None):
+        from types import SimpleNamespace
+        from .mod_skins import prepare_skin_pack
+        prepare_skin_pack(SimpleNamespace(game_data=game, resources=resources, skin=args.skin,
+            output=output / 'skin', jobs=args.jobs))

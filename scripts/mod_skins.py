@@ -6,11 +6,69 @@ animations are retained from the matching converted resource pack.
 from collections import defaultdict
 from pathlib import Path
 import gc
-import json
+import hashlib
 import re
 import zipfile
+from concurrent.futures import ProcessPoolExecutor
 
-from .common import UNITY_VERSION, write_json, read_json
+from .common import UNITY_VERSION, write_json, relative_bundle, output_directory
+
+
+def package_skin(root, name, compatibility, bundles, output):
+    """Package already verified iOS bundles without any compiled plugin inputs."""
+    if root.name != 'SilksongSkin' or not name or not bundles:
+        raise ValueError('Invalid standalone skin')
+    records, names = [], set()
+    for row in bundles:
+        relative_bundle(row['bundle'])
+        if row['bundle'].lower() in names:
+            raise ValueError('Duplicate skin bundle')
+        names.add(row['bundle'].lower())
+        path = root / 'bundles' / row['bundle']
+        if row['bytes'] <= 0 or path.stat().st_size != row['bytes']:
+            raise ValueError('Incomplete skin bundle: ' + row['bundle'])
+        records.append(dict(bundle=row['bundle'], bytes=row['bytes']))
+    manifest = dict(schema=1, name=name, compatibility=compatibility,
+                    bundles=sorted(records, key=lambda r: r['bundle']))
+    write_json(root / 'skin.json', manifest)
+    archive_path = output / 'SilksongSkin-ios.zip'
+    # Only listed files are included; leftovers cannot silently join a skin.
+    with zipfile.ZipFile(archive_path, 'w', zipfile.ZIP_DEFLATED, compresslevel=1) as archive:
+        archive.write(root / 'skin.json', 'SilksongSkin/skin.json')
+        for row in manifest['bundles']:
+            relative = 'bundles/' + row['bundle']
+            archive.write(root / relative, 'SilksongSkin/' + relative)
+    with archive_path.open('rb') as stream:
+        digest = hashlib.file_digest(stream, 'sha256').hexdigest()
+    write_json(output / 'skin-pack-report.json', dict(schema=1, name=name,
+        compatibility=compatibility, bundles=len(records), bytes=archive_path.stat().st_size,
+        sha256=digest, device_verified=False))
+    print('Standalone skin: ' + str(archive_path), flush=True)
+    return archive_path
+
+
+def prepare_skin_pack(args):
+    from .mods import converted_index
+    game, skin, resources = [p.expanduser().resolve() for p in
+                             (args.game_data, args.skin, args.resources)]
+    output = output_directory(args.output, game, skin, resources)
+    if output.exists():
+        raise ValueError('Use a fresh skin output directory')
+    index = converted_index(resources)
+    output.mkdir(parents=True)
+    metadata = scan_metadata(game, output / 'skin-metadata.json')
+    selections, pngs = match_skin(skin, metadata)
+    if set(selections) - {r['bundle'] for r in index['bundles']}:
+        raise ValueError('Skin does not match the converted resource catalog')
+    root = output / 'data/SilksongSkin'
+    jobs = [(str(resources), str(root / 'bundles'), name, rows) for name, rows in sorted(selections.items())]
+    results = []
+    with ProcessPoolExecutor(max_workers=args.jobs) as pool:
+        for row in pool.map(overlay_bundle, jobs):
+            results.append(row)
+            print(f'Skin: {len(results)}/{len(jobs)} bundles ({row["bundle"]})', flush=True)
+    write_json(output / 'skin-conversion.json', dict(pngs=pngs, bundles=results))
+    return package_skin(root, skin.name, index['pack']['compatibility'], results, output)
 
 
 def normalized(name):

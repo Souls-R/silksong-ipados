@@ -32,6 +32,8 @@ def inspect_ipa(ipa, manifest):
             embedded = json.loads(archive.read(prefix + 'Data/Raw/native-mod-index.json'))
             if embedded != manifest['mod_contract']:
                 raise ValueError('IPA mod contract differs')
+            if embedded.get('schema') != 2 or 'overrides' in embedded:
+                raise ValueError('IPA must not bind a skin to compiled plugins')
             assemblies = json.loads(archive.read(prefix + 'Data/ScriptingAssemblies.json'))['names']
             if not {'BepInEx.dll', '0Harmony.dll'}.issubset(assemblies):
                 raise ValueError('IPA missing compiled mod runtime assemblies')

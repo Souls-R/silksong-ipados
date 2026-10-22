@@ -111,6 +111,10 @@ public class AddressablesLoadScene { public UnityEngine.GameObject gameObject; }
 public static class NativeMods
 {
     public static void Install(string compatibility) {}
-    public static string Resolve(string bundle, string path, ref long bytes) => path;
     public static void StartPlugins() {}
+}
+public static class NativeSkin
+{
+    public static void Install(NativeResourceStore.Contract resources) {}
+    public static string Resolve(string bundle, string path, ref long bytes) => path;
 }

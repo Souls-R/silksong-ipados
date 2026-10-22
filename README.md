@@ -21,7 +21,8 @@ python3 build.py resources     转换资源
 python3 build.py prepare       生成 iOS 工程
 python3 build.py native        编译未签名 IPA
 python3 build.py resource-zip   打包资源 ZIP
-python3 build.py mod-pack       准备可选皮肤与血条 Mod
+python3 build.py mod-pack       准备血条 Mod
+python3 build.py skin-pack      准备独立皮肤包
 ```
 
 运行对应命令的 `--help` 查看参数。
@@ -240,22 +241,41 @@ HPBarPro 的插件和 Harmony 钩子在编译前静态写入程序集，再一�
 
 ```sh
 python3 build.py mod-pack --game-data /path/to/Data \
-  --resources /path/to/converted-resources \
-  --skin /path/to/active-skin-folder --hpbar /path/to/HPBarPro.zip \
-  --output /path/to/mod-output --jobs 2
+  --resources /path/to/converted-resources --hpbar /path/to/HPBarPro.zip \
+  --output /path/to/mod-output
+
+python3 build.py skin-pack --game-data /path/to/Data \
+  --resources /path/to/converted-resources --skin /path/to/active-skin-folder \
+  --output /path/to/skin-output --jobs 2
 ```
 
 皮肤目录应包含 `active.txt`、`Knight/atlas0.png` 等集合目录和可选的 `Texture2D/`。
 `--resources` 也接受已转换的资源 ZIP；所有 PNG 必须在这版游戏中找到对应纹理。
-随后在原来的 `prepare` 命令加 `--mods /path/to/mod-output/inputs`。
+血条需要在原来的 `prepare` 命令加 `--mods /path/to/mod-output/inputs`。
+皮肤只生成数据包，不需要修改 `prepare` 参数或重新编译 IPA；也可以在不包含血条的新版 IPA 中使用。
 静态编织工具需要 .NET 8 或更新的 SDK；也可用 `--mod-weaver /path/to/ModWeaver`
 指定为构建主机发布的独立可执行文件。
 
-测试时覆盖安装对应 IPA，退出游戏，将 Mod ZIP 解压后的整个 `Mods` 文件夹放到游戏的
-Documents 中，与 `SilksongResources-v1` 并列。原资源包和存档继续复用。
-缺少文件、文件未复制完整或版本不匹配时，Mod 不会启用。排查时先在系统设置中打开诊断日志，
-再重启游戏查看 `native.log`。
-添加 `Mods/disabled.txt` 或移走整个 `Mods` 文件夹，重启后恢复普通游戏模式。
+覆盖安装支持独立皮肤的新 IPA，退出游戏，分别解压数据 ZIP，将完整文件夹放进游戏 Documents：
+
+```text
+Documents/
+  SilksongResources-v1/       原资源包，继续复用
+  SilksongSkin/
+    skin.json                皮肤名称、资源版本、覆盖文件清单
+    bundles/                 已转换的 iOS 资源
+  Mods/
+    plugins/Silk_HpBarPro/    血条数据
+    config/                  首次启用后生成的配置
+```
+
+更换皮肤时替换整个 `SilksongSkin` 文件夹并重启游戏。无需重编 IPA、重传原资源包或更改存档。
+原始 PNG 皮肤仍需先通过 `skin-pack` 转换。只有清单列出的文件会按需覆盖原资源；
+不兼容、缺失或不完整的皮肤会整套停用，恢复原版外观，血条照常运行。
+皮肤也不依赖血条数据是否存在或启用。两者的启动状态会写入 `native.log`。
+移走 `SilksongSkin` 或添加其中的 `disabled.txt` 可恢复原版外观；
+移走 `Mods` 或添加 `Mods/disabled.txt` 可禁用血条，均需重启。
+旧测试包的 `Mods` 可保留，旧的 `Mods/overrides` 不再作为皮肤读取。
 血条配置首次启用后写在 `Mods/config/`，修改后重启生效；安装新插件 DLL 需要重新编译 IPA。
 以上为实验支持，仍需实机验证皮肤动画、血条、场景切换和内存表现。
 

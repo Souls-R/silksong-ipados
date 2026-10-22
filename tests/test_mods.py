@@ -1,12 +1,33 @@
 from pathlib import Path
 import tempfile
 import unittest
+import json
+import zipfile
 
 from scripts.mods import safe_path
-from scripts.mod_skins import normalized, match_skin
+from scripts.mod_skins import normalized, match_skin, package_skin
 
 
 class ModImportTests(unittest.TestCase):
+    def test_standalone_skin_contains_no_plugin_contract_and_excludes_leftovers(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            output = Path(tmp)
+            skin = output / 'SilksongSkin'
+            (skin / 'bundles/sub').mkdir(parents=True)
+            (skin / 'bundles/sub/hero.bundle').write_bytes(b'hero')
+            (skin / 'bundles/old.bundle').write_bytes(b'old')
+            archive = package_skin(skin, 'Skin A', 'v1', [dict(bundle='sub/hero.bundle', bytes=4)], output)
+            with zipfile.ZipFile(archive) as pack:
+                self.assertEqual(set(pack.namelist()), {'SilksongSkin/skin.json', 'SilksongSkin/bundles/sub/hero.bundle'})
+                manifest = json.loads(pack.read('SilksongSkin/skin.json'))
+                self.assertEqual(manifest['compatibility'], 'v1')
+                self.assertEqual(manifest['bundles'], [dict(bundle='sub/hero.bundle', bytes=4)])
+            for bad in ([dict(bundle='../escape.bundle', bytes=4)],
+                        [dict(bundle='sub/hero.bundle', bytes=5)],
+                        [dict(bundle='sub/hero.bundle', bytes=4)] * 2):
+                with self.assertRaises(ValueError):
+                    package_skin(skin, 'Skin B', 'v1', bad, output)
+
     def test_mod_paths_stay_in_the_selected_folder(self):
         root = Path(tempfile.gettempdir()).resolve()
         for bad in ('../data', '/etc/passwd', 'C:/data', 'x\\data', 'x//data', 'x/./data', 'x\0data'):

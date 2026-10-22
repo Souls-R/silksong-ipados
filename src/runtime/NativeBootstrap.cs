@@ -51,6 +51,7 @@ public sealed class NativeBootstrap : MonoBehaviour
             contract = File.ReadAllText(Path.Combine(Application.streamingAssetsPath, "native-resource-index.json"));
             resourceContract = JsonUtility.FromJson<NativeResourceStore.Contract>(contract);
             NativeResourceStore.ValidateContract(resourceContract);
+            NativeSkin.Install(resourceContract);
             NativeMods.Install(resourceContract.compatibility);
             packRoot = NativeResourceStore.LocalPath(Application.persistentDataPath, resourceContract.folder);
             bundleRoot = Path.Combine(packRoot, "aa/StandaloneOSX");
@@ -82,7 +83,7 @@ public sealed class NativeBootstrap : MonoBehaviour
             throw new FileNotFoundException("Resource not in active pack: " + name + "; available=" + bundles.Count, name);
         string path = NativeResourceStore.LocalPath(bundleRoot, name);
         long bytes = record.bytes;
-        path = NativeMods.Resolve(name, path, ref bytes);
+        path = NativeSkin.Resolve(name, path, ref bytes);
         // Let the provider read the requested asset. Its actual load failure
         // invalidates acceptance; no extra stat/read pass on the hot path.
         var options = location.Data as AssetBundleRequestOptions;
@@ -295,7 +296,9 @@ public sealed class NativeBootstrap : MonoBehaviour
     {
         bool error = type == LogType.Error || type == LogType.Exception || type == LogType.Assert;
         bool repairFailure = type == LogType.Warning && message.StartsWith("NATIVE_ANIMATOR:", StringComparison.Ordinal);
-        if (!error && !repairFailure && !NativePreferences.Diagnostics) return;
+        bool modStatus = message.StartsWith("[NativeSkin]", StringComparison.Ordinal)
+            || message.StartsWith("[NativeMods]", StringComparison.Ordinal);
+        if (!error && !repairFailure && !modStatus && !NativePreferences.Diagnostics) return;
         if (NativePreferences.StartupDetails) NativeDiagnosticOverlay.Add(message);
         if (logBytes >= 4 * 1024 * 1024) return;
         string line = type + ": " + message + "\n" + (error ? trace + "\n" : "");

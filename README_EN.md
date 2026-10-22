@@ -21,7 +21,8 @@ python3 build.py resources     Convert resources
 python3 build.py prepare       Generate the iOS project
 python3 build.py native        Build an unsigned IPA
 python3 build.py resource-zip   Package resources as a ZIP
-python3 build.py mod-pack       Prepare optional skin and HP bar mods
+python3 build.py mod-pack       Prepare the HP bar mod
+python3 build.py skin-pack      Prepare an independent skin pack
 ```
 
 Run any command with `--help` to see its options.
@@ -237,17 +238,24 @@ HPBarPro 1.0.4 and PNG skins using Customizer / CustomizerT2D naming are support
 Plugins and supported Harmony hooks are woven before IL2CPP compilation; skins become compressed
 iOS texture overlays. Desktop BepInEx is not installed on the device, and arbitrary DLL loading is unsupported.
 
-Use `build.py mod-pack --game-data <Data> --resources <converted-folder-or-zip> --skin <active-skin>
+Use `build.py mod-pack --game-data <Data> --resources <converted-folder-or-zip>
 --hpbar <HPBarPro.zip> --output <mod-output>`, then add `--mods <mod-output>/inputs` to `prepare`.
-The skin folder must contain `active.txt`. Static weaving requires a .NET 8 or newer SDK, or a
-host-specific standalone executable supplied with `--mod-weaver`.
+Generate skins independently with `build.py skin-pack --game-data <Data> --resources <converted-folder-or-zip>
+--skin <active-skin> --output <skin-output>`. The source skin must contain `active.txt`.
+Static plugin weaving requires a .NET 8 or newer SDK, or a host-specific standalone executable
+supplied with `--mod-weaver`. A skin pack requires no plugin inputs or IPA rebuild.
 
-Install the matching IPA, quit the game, and extract the complete `Mods` folder into Documents
-beside `SilksongResources-v1`. The original resource pack and saves remain usable. Missing,
-partial or incompatible data disables mods. Enable diagnostic logs in system Settings and restart
-to inspect the reason in `native.log`. Remove `Mods`
-or create `Mods/disabled.txt` and restart to return to the original game. HP bar configuration
-is created in `Mods/config/`; restart after editing it. Adding plugin DLLs requires rebuilding.
+Install an IPA supporting standalone skins, quit the game, and extract `SilksongSkin` and `Mods`
+into Documents beside `SilksongResources-v1`. Keep the original resource pack and saves.
+`SilksongSkin/skin.json` lists compatible converted files in `SilksongSkin/bundles/`.
+Replace the entire skin folder and restart to change skins without rebuilding the IPA.
+Source PNG skins must first be converted. Only listed bundles override original resources, on demand.
+An absent, partial or incompatible skin selects the original appearance; HP bars remain independent.
+Skins also work when HP data is absent or disabled. Startup status is written to `native.log`.
+Remove `SilksongSkin` or add `SilksongSkin/disabled.txt` to disable the skin; remove `Mods` or add
+`Mods/disabled.txt` to disable HP bars, then restart. Existing HP data from build 32 is reusable;
+the old `Mods/overrides` folder is ignored. HP bar configuration is created in `Mods/config/`;
+restart after editing it. Adding plugin DLLs still requires rebuilding.
 Device validation of animations, health bars, scene transitions and memory use is still required.
 
 ## Release Notes
