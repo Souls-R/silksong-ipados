@@ -108,3 +108,9 @@ public class NativeDisplaySettings {}
 public static class NativeInputCompatibility { public static void Install() {} }
 public class Platform { public static Platform Current = new Platform(); }
 public class AddressablesLoadScene { public UnityEngine.GameObject gameObject; }
+public static class NativeMods
+{
+    public static void Install(string compatibility) {}
+    public static string Resolve(string bundle, string path, ref long bytes) => path;
+    public static void StartPlugins() {}
+}

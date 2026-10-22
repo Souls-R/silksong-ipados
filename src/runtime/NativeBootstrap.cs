@@ -51,6 +51,7 @@ public sealed class NativeBootstrap : MonoBehaviour
             contract = File.ReadAllText(Path.Combine(Application.streamingAssetsPath, "native-resource-index.json"));
             resourceContract = JsonUtility.FromJson<NativeResourceStore.Contract>(contract);
             NativeResourceStore.ValidateContract(resourceContract);
+            NativeMods.Install(resourceContract.compatibility);
             packRoot = NativeResourceStore.LocalPath(Application.persistentDataPath, resourceContract.folder);
             bundleRoot = Path.Combine(packRoot, "aa/StandaloneOSX");
             // Original PreWarm callbacks can request assets before Start(),
@@ -80,6 +81,8 @@ public sealed class NativeBootstrap : MonoBehaviour
         if (!bundles.TryGetValue(name, out record))
             throw new FileNotFoundException("Resource not in active pack: " + name + "; available=" + bundles.Count, name);
         string path = NativeResourceStore.LocalPath(bundleRoot, name);
+        long bytes = record.bytes;
+        path = NativeMods.Resolve(name, path, ref bytes);
         // Let the provider read the requested asset. Its actual load failure
         // invalidates acceptance; no extra stat/read pass on the hot path.
         var options = location.Data as AssetBundleRequestOptions;
@@ -87,7 +90,7 @@ public sealed class NativeBootstrap : MonoBehaviour
         {
             options.Crc = 0;
             options.Hash = "";
-            options.BundleSize = record.bytes;
+            options.BundleSize = bytes;
             options.UseUnityWebRequestForLocalBundles = false;
         }
         return path;
@@ -156,6 +159,7 @@ public sealed class NativeBootstrap : MonoBehaviour
             if (check == null || check.value != 17 || !check.callback)
                 throw new Exception("JSON deserialization callback self-check failed");
             int count = 0;
+            NativeMods.StartPlugins();
             gameOwnsScenes = true;
             foreach (var root in SceneManager.GetActiveScene().GetRootGameObjects())
                 foreach (var loader in root.GetComponentsInChildren<AddressablesLoadScene>(true))

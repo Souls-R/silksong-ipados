@@ -21,6 +21,7 @@ python3 build.py resources     Convert resources
 python3 build.py prepare       Generate the iOS project
 python3 build.py native        Build an unsigned IPA
 python3 build.py resource-zip   Package resources as a ZIP
+python3 build.py mod-pack       Prepare optional skin and HP bar mods
 ```
 
 Run any command with `--help` to see its options.
@@ -229,6 +230,25 @@ Current release: **0.8.1 / build 29 test version**.
 | Startup UI and app name | Simplified Chinese, Traditional Chinese, and English, following the system language |
 
 Before using a mouse, turn off **Settings → Accessibility → Touch → AssistiveTouch** on your iPad to prevent left clicks from being converted into screen taps.
+
+## Optional Mods (Experimental Branch)
+
+HPBarPro 1.0.4 and PNG skins using Customizer / CustomizerT2D naming are supported experimentally.
+Plugins and supported Harmony hooks are woven before IL2CPP compilation; skins become compressed
+iOS texture overlays. Desktop BepInEx is not installed on the device, and arbitrary DLL loading is unsupported.
+
+Use `build.py mod-pack --game-data <Data> --resources <converted-folder-or-zip> --skin <active-skin>
+--hpbar <HPBarPro.zip> --output <mod-output>`, then add `--mods <mod-output>/inputs` to `prepare`.
+The skin folder must contain `active.txt`. Static weaving requires a .NET 8 or newer SDK, or a
+host-specific standalone executable supplied with `--mod-weaver`.
+
+Install the matching IPA, quit the game, and extract the complete `Mods` folder into Documents
+beside `SilksongResources-v1`. The original resource pack and saves remain usable. Missing,
+partial or incompatible data disables mods. Enable diagnostic logs in system Settings and restart
+to inspect the reason in `native.log`. Remove `Mods`
+or create `Mods/disabled.txt` and restart to return to the original game. HP bar configuration
+is created in `Mods/config/`; restart after editing it. Adding plugin DLLs requires rebuilding.
+Device validation of animations, health bars, scene transitions and memory use is still required.
 
 ## Release Notes
 

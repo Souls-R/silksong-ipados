@@ -28,6 +28,13 @@ def inspect_ipa(ipa, manifest):
         contract = validate_contract(json.loads(archive.read(prefix + 'Data/Raw/native-resource-index.json')))
         if contract != manifest['resource_contract']:
             raise ValueError('IPA resource contract differs')
+        if manifest.get('mod_contract'):
+            embedded = json.loads(archive.read(prefix + 'Data/Raw/native-mod-index.json'))
+            if embedded != manifest['mod_contract']:
+                raise ValueError('IPA mod contract differs')
+            assemblies = json.loads(archive.read(prefix + 'Data/ScriptingAssemblies.json'))['names']
+            if not {'BepInEx.dll', '0Harmony.dll'}.issubset(assemblies):
+                raise ValueError('IPA missing compiled mod runtime assemblies')
         if manifest.get('launch_ui'):
             for name in ['Settings.bundle/Root.plist', 'Assets.car',
                          'Data/Raw/native-launch/strings.json',

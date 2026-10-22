@@ -12,6 +12,9 @@ from scripts.common import REPO
 
 
 class RuntimeResourceStore(unittest.TestCase):
+    def test_optional_mods_never_route_partial_or_incompatible_data(self):
+        self.run_csharp(['src/runtime/NativeResourceStore.cs', 'src/runtime/NativeMods.cs', 'tests/ModTests.cs'])
+
     def test_application_pause_is_idempotent_and_preserves_menus(self):
         self.run_csharp(['src/runtime/NativeAutoPause.cs', 'tests/AutoPauseTests.cs'])
 

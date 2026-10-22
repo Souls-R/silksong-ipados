@@ -27,6 +27,15 @@ def main():
     prepare.add_argument('--build-number', default='29')
     prepare.add_argument('--diagnostics', action='store_true', help='Default diagnostic settings on; users can change them in iPadOS Settings')
     prepare.add_argument('--metal-hud', action='store_true', help='Default native HUD on; users can change it in iPadOS Settings')
+    prepare.add_argument('--mods', type=Path, help='Optional prepared mod inputs from mod-pack')
+    prepare.add_argument('--mod-weaver', type=Path, help='Prebuilt ModWeaver executable (otherwise requires .NET 8 SDK)')
+    mods = commands.add_parser('mod-pack', help='Prepare HPBarPro and a Customizer skin as optional iOS mods')
+    mods.add_argument('--game-data', type=Path, required=True)
+    mods.add_argument('--resources', type=Path, required=True, help='Converted resource directory or ZIP')
+    mods.add_argument('--skin', type=Path, required=True, help='Active skin folder containing active.txt')
+    mods.add_argument('--hpbar', type=Path, required=True, help='HPBarPro ZIP or extracted directory')
+    mods.add_argument('--output', type=Path, required=True)
+    mods.add_argument('--jobs', type=int, choices=range(1, 5), default=2)
     native = commands.add_parser('native', help='Compile and package the prepared project on macOS')
     native.add_argument('--work', type=Path, required=True)
     native.add_argument('--jobs', type=int, choices=range(1, 33), default=6)
@@ -44,6 +53,9 @@ def main():
         elif args.command == 'native':
             from scripts.native import build_native
             build_native(args)
+        elif args.command == 'mod-pack':
+            from scripts.mods import prepare_mod_pack
+            prepare_mod_pack(args)
         else:
             from scripts.resources import zip_resources
             zip_resources(args)

@@ -1,0 +1,10 @@
+{
+  "repository": "https://github.com/jakobkhansen/SilksongAndroid",
+  "commit": "4fcde8e856808bdbde67e19333d0770b440beddb",
+  "paths": ["tools/mod-weaver", "tools/bepinex-shim/src"],
+  "license": "MIT",
+  "local_changes": [
+    "Program.cs dispatches ios-compat to the local IOSCompat tool",
+    "Android Paths.cs is replaced by src/mods/Paths.cs"
+  ]
+}

@@ -21,6 +21,7 @@ python3 build.py resources     转换资源
 python3 build.py prepare       生成 iOS 工程
 python3 build.py native        编译未签名 IPA
 python3 build.py resource-zip   打包资源 ZIP
+python3 build.py mod-pack       准备可选皮肤与血条 Mod
 ```
 
 运行对应命令的 `--help` 查看参数。
@@ -229,6 +230,34 @@ Documents/
 | 启动页与应用名称 | 简体中文、繁体中文、英文，跟随系统语言 |
 
 使用鼠标前，请关闭 iPad「设置 → 辅助功能 → 触控 → 辅助触控」，避免左键被系统转换为触屏点击。
+
+## 可选 Mod（实验分支）
+
+目前适配 HPBarPro 1.0.4，以及 Customizer / CustomizerT2D 格式的 PNG 皮肤。
+HPBarPro 的插件和 Harmony 钩子在编译前静态写入程序集，再一起交给 IL2CPP；
+皮肤导入器按原集合名、材质和纹理名定位资源，生成压缩的 iOS 纹理覆盖包。
+不需要在 iPad 安装桌面 BepInEx，也不能在运行时直接丢入任意 DLL。
+
+```sh
+python3 build.py mod-pack --game-data /path/to/Data \
+  --resources /path/to/converted-resources \
+  --skin /path/to/active-skin-folder --hpbar /path/to/HPBarPro.zip \
+  --output /path/to/mod-output --jobs 2
+```
+
+皮肤目录应包含 `active.txt`、`Knight/atlas0.png` 等集合目录和可选的 `Texture2D/`。
+`--resources` 也接受已转换的资源 ZIP；所有 PNG 必须在这版游戏中找到对应纹理。
+随后在原来的 `prepare` 命令加 `--mods /path/to/mod-output/inputs`。
+静态编织工具需要 .NET 8 或更新的 SDK；也可用 `--mod-weaver /path/to/ModWeaver`
+指定为构建主机发布的独立可执行文件。
+
+测试时覆盖安装对应 IPA，退出游戏，将 Mod ZIP 解压后的整个 `Mods` 文件夹放到游戏的
+Documents 中，与 `SilksongResources-v1` 并列。原资源包和存档继续复用。
+缺少文件、文件未复制完整或版本不匹配时，Mod 不会启用。排查时先在系统设置中打开诊断日志，
+再重启游戏查看 `native.log`。
+添加 `Mods/disabled.txt` 或移走整个 `Mods` 文件夹，重启后恢复普通游戏模式。
+血条配置首次启用后写在 `Mods/config/`，修改后重启生效；安装新插件 DLL 需要重新编译 IPA。
+以上为实验支持，仍需实机验证皮肤动画、血条、场景切换和内存表现。
 
 ## 更新说明
 

@@ -68,7 +68,7 @@ def compile_helper(unity, package, managed, work, diagnostics):
         work / 'logs/helper.log')
 
 
-def startup_assets(game, ios, data):
+def startup_assets(game, ios, data, mod_assemblies=()):
     import UnityPy
     UnityPy.config.FALLBACK_UNITY_VERSION = UNITY_VERSION
     data.mkdir(parents=True)
@@ -115,6 +115,11 @@ def startup_assets(game, ios, data):
         raise ValueError('Invalid scripting assemblies list')
     assemblies['names'].append('NativeCompatibility.dll')
     assemblies['types'].append(assemblies['types'][assemblies['names'].index('Assembly-CSharp.dll')])
+    for name in mod_assemblies:
+        if name in assemblies['names']:
+            raise ValueError('Duplicate mod assembly: ' + name)
+        assemblies['names'].append(name)
+        assemblies['types'].append(assemblies['types'][assemblies['names'].index('Assembly-CSharp.dll')])
     write_json(data / 'ScriptingAssemblies.json', assemblies)
     callbacks = read_json(game / 'RuntimeInitializeOnLoads.json')
     callbacks['root'] += [dict(assemblyName='NativeCompatibility', nameSpace='',
@@ -165,6 +170,14 @@ def prepare(args):
     contract = resource_contract(index)
     managed = output / 'managed'
     stage_managed(game, unity, managed)
+    mod_contract, mod_assemblies = None, []
+    if getattr(args, 'mods', None):
+        from .mods import weave_plugins
+        mod_contract, mod_assemblies = weave_plugins(args.mods, managed, output,
+            [tool(unity, 'NetCoreRuntime/dotnet'), unity / 'DotNetSdkRoslyn/csc.dll'],
+            weaver=getattr(args, 'mod_weaver', None))
+        if mod_contract['compatibility'] != contract['compatibility']:
+            raise ValueError('Mods do not match this resource pack')
     compile_helper(unity, package, managed, output, args.diagnostics)
     project = output / 'project'
     shutil.copytree(ios / 'Trampoline', project, ignore=shutil.ignore_patterns('*sim*', '*-dev.a'))
@@ -185,10 +198,12 @@ def prepare(args):
     preprocessor.write_text(source.replace('#define PLATFORM_IOS    0', '#define PLATFORM_IOS    1')
                            .replace('#define UNITY_USES_IAD 1', '#define UNITY_USES_IAD 0'), encoding='utf-8')
     data = project / 'Data'
-    startup_assets(game, ios, data)
+    startup_assets(game, ios, data, mod_assemblies)
     shutil.copytree(output / 'metadata', data / 'Managed')
     shutil.copytree(resources / 'program/Raw', data / 'Raw')
     write_json(data / 'Raw/native-resource-index.json', contract)
+    if mod_contract:
+        write_json(data / 'Raw/native-mod-index.json', mod_contract)
     for source in (REPO / 'src/runtime').iterdir():
         if source.suffix in ('.mm', '.h'):
             shutil.copyfile(source, project / 'Libraries' / source.name)
@@ -199,6 +214,8 @@ def prepare(args):
         if (package / name).is_file():
             shutil.copyfile(package / name, notices / name)
     shutil.copyfile(REPO / 'LICENSE', notices / 'Builder-LICENSE.txt')
+    if mod_contract:
+        shutil.copyfile(REPO / 'third_party/silksong-android/LICENSE', notices / 'ModWeaver-LICENSE.txt')
     info_path = project / 'Info.plist'
     info = plistlib.loads(info_path.read_bytes())
     info.update(CFBundleDisplayName=args.app_name, CFBundleShortVersionString=args.version,
@@ -215,5 +232,7 @@ def prepare(args):
                     version=args.version, build=args.build_number, diagnostics=args.diagnostics,
                     metal_hud=args.metal_hud, resource_contract=contract, launch_ui=True,
                     prepared=True, native_built=False)
+    if mod_contract:
+        manifest['mod_contract'] = mod_contract
     write_json(output / 'build.json', manifest)
     print(f'Prepared complete native build: {output}\nNext, on macOS: python3 build.py native --work "{output}"')
