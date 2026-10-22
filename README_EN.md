@@ -14,7 +14,7 @@ This project does not include any official game assets. You need to build from y
 
 You need an **Apple Silicon Mac**. Follow the [build guide](#build-your-own-ipa) to convert game resources, generate the project, compile the IPA, and sign and install it on your iPad.
 
-Touch controls are only partially supported. An external keyboard or controller is required for gameplay.
+Touch controls are only partially supported. Enable the on-screen gamepad on the notice page to play by touch, or use an external keyboard or controller.
 
 ```text
 python3 build.py resources     Convert resources
@@ -28,6 +28,7 @@ Run any command with `--help` to see its options.
 ## Features
 
 - iOS controller, external keyboard, and mouse support.
+- On-screen gamepad that reports controller input instead of keyboard input, so it never clashes with key bindings; positions can be dragged into place on the notice page.
 - Original graphics and frame rate settings, with support for the iPad's aspect ratio.
 - General Animator binding fixes for animation issues.
 - Logging and Metal performance overlay options in system Settings.
@@ -191,8 +192,13 @@ After installation, open Hollow Knight: Silksong in iPadOS Settings (under Apps 
 - Diagnostic Logs: write resource loading and other logs to a file.
 - Performance Overlay: show frame rate, frame time, and GPU time.
 - Show Startup Details: display diagnostic text on screen.
+- On-Screen Gamepad: show on-screen gamepad controls, set to Auto, Always On, or Always Off, with positions adjusted on the notice page.
 
-The notice is shown by default. Set “On Next Launch” to “Go Straight to Game” on the notice page to skip it. Logs and the performance overlay are off by default.
+The notice is shown by default. Set “On Next Launch” to “Go Straight to Game” on the notice page to skip it. Logs and the performance overlay are off by default. The performance overlay can also be switched on the notice page; a change applies the next time the app starts.
+
+The on-screen gamepad defaults to Auto: it appears when you touch the screen during gameplay and hides as soon as an external keyboard, controller, or mouse reports input. The notice page changes it directly, and the choice survives restarts.
+
+Select Adjust Button Positions on the notice page to drag each control and the stick into place and pinch with two fingers to resize it; the layout saves on release and applies immediately, and Reset restores the default. Positions are stored as fractions of the screen, so one layout fits both iPads and tall phone screens, and an iPhone is locked to landscape.
 
 To troubleshoot, enable Diagnostic Logs, restart the app, reproduce the issue, and export `native.log` from the app's Documents folder.
 
@@ -225,12 +231,18 @@ Current release: **0.8.1 / build 29 test version**.
 | System requirements | Minimum build target: iOS / iPadOS 16.0 |
 | Tested device | iPad Pro 11-inch (2021, M1) |
 | iPadOS 16 testing | iPad with M2 and 8 GB RAM; reported working with an IPA rebuilt from [PR #1](https://github.com/Souls-R/silksong-ipados/pull/1) |
-| Controls | External keyboard or controller for gameplay, with mouse button binding; partial touch support |
+| Controls | External keyboard or controller for gameplay, with mouse button binding; optional on-screen gamepad for touch play |
 | Startup UI and app name | Simplified Chinese, Traditional Chinese, and English, following the system language |
 
 Before using a mouse, turn off **Settings → Accessibility → Touch → AssistiveTouch** on your iPad to prevent left clicks from being converted into screen taps.
 
 ## Release Notes
+
+### In Development (PR #2)
+
+- Added an on-screen gamepad, set to Auto, Always On, or Always Off.
+- Drag buttons and the stick to reposition them, pinch to resize, and save the layout automatically.
+- Auto mode ignores sensors and idle device updates; switching away releases virtual buttons and stick input.
 
 ### 0.8.1
 

@@ -201,11 +201,17 @@ def prepare(args):
     shutil.copyfile(REPO / 'LICENSE', notices / 'Builder-LICENSE.txt')
     info_path = project / 'Info.plist'
     info = plistlib.loads(info_path.read_bytes())
+    # The template carries per-device orientation keys and a device key always
+    # wins over the shared one, so write all three: a phone has to stay in
+    # landscape too instead of rotating the game into portrait.
+    landscape = ['UIInterfaceOrientationLandscapeLeft', 'UIInterfaceOrientationLandscapeRight']
+    orientations = {key: landscape for key in ('UISupportedInterfaceOrientations',
+                                              'UISupportedInterfaceOrientations~iphone',
+                                              'UISupportedInterfaceOrientations~ipad')}
     info.update(CFBundleDisplayName=args.app_name, CFBundleShortVersionString=args.version,
                 CFBundleVersion=args.build_number, UIFileSharingEnabled=True,
-                LSSupportsOpeningDocumentsInPlace=True, UIRequiresFullScreen=True,
-                UISupportedInterfaceOrientations=['UIInterfaceOrientationLandscapeLeft',
-                                                  'UIInterfaceOrientationLandscapeRight'])
+                LSSupportsOpeningDocumentsInPlace=True, UIRequiresFullScreen=True)
+    info.update(orientations)
     info_path.write_bytes(plistlib.dumps(info))
     from .mouse import configure_mouse
     configure_mouse(project)
