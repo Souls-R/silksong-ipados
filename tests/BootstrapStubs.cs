@@ -103,6 +103,8 @@ public static class NativePreferences
     public static void ConsumeRecheck() {}
 }
 public class NativeAnimatorCompatibility { public static void Install() {} }
+public class NativeAutoPause {}
+public class NativeVirtualPad {}
 public class NativeDisplaySettings {}
 public static class NativeInputCompatibility { public static void Install() {} }
 public class Platform { public static Platform Current = new Platform(); }

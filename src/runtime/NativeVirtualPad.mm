@@ -295,6 +295,7 @@ static const PadButtonSpec PadButtons[] = {
 - (void)buildEditor
 {
     self.editPan = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(drag:)];
+    self.editPan.maximumNumberOfTouches = 1;
     self.editPan.enabled = NO;
     self.editPan.delegate = self;
     [self addGestureRecognizer:self.editPan];
@@ -344,6 +345,10 @@ static const PadButtonSpec PadButtons[] = {
 {
     PadHeld = 0;
     PadPending = 0;
+    for (UIControl* control in self.draggables) {
+        [control cancelTrackingWithEvent:nil];
+        control.highlighted = NO;
+    }
     [self.stick releaseStick];
 }
 - (void)applyVisibility
@@ -502,6 +507,9 @@ static const PadButtonSpec PadButtons[] = {
                                       CGRectGetWidth(frame), CGRectGetHeight(frame),
                                       self.canvasSize.width, self.canvasSize.height, &x, &y);
         control.frame = CGRectMake(x, y, CGRectGetWidth(frame), CGRectGetHeight(frame));
+        // Pinching can begin before the pan ends. Keep its in-memory anchor
+        // current so applyLayout does not jump back to the previous saved spot.
+        [self storeOffset:control.name frame:control.frame];
         return;
     }
     // Ended, cancelled or failed: keep the position on screen and remember it.
@@ -527,6 +535,7 @@ static const PadButtonSpec PadButtons[] = {
         [self applyLayout];
         return;
     }
+    [self storeOffset:control.name frame:control.frame];
     [self storeSize:control.name size:[self sizeOf:control.name]];
     [self saveLayout];
     self.pinchControl = nil;
@@ -581,7 +590,11 @@ static void PadEnsureView(void)
         // Backgrounding releases everything, exactly like a disconnected pad.
         [NSNotificationCenter.defaultCenter addObserverForName:UIApplicationWillResignActiveNotification
             object:nil queue:NSOperationQueue.mainQueue
-            usingBlock:^(NSNotification* note) { PadView.realDeviceInput = YES; [PadView applyVisibility]; }];
+            usingBlock:^(NSNotification* note) {
+                [PadView releaseAll];
+                PadView.realDeviceInput = YES;
+                [PadView applyVisibility];
+            }];
     }
     if (host.subviews.lastObject != PadView) [host addSubview:PadView];
     PadObserve(host);
@@ -638,6 +651,10 @@ extern "C" void NativeVirtualPad_ReadState(NativeVirtualPadSnapshot* result)
 {
     if (!result) return;
     *result = {};
+    if (UIApplication.sharedApplication.applicationState != UIApplicationStateActive) {
+        [PadView releaseAll];
+        return;
+    }
     // The editor is on-screen only: while the player arranges controls the game
     // must not see a pad, or a stray press would leak into the launcher page.
     if (PadEditing) { result->state = 0; return; }

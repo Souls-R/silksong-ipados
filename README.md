@@ -132,7 +132,7 @@ python3 build.py prepare --game-data "$gameData" --unity-data "$unityData" --inp
 
 `prepare` 需要一个尚不存在的输出目录。重新生成工程时，换一个 `nativeOutput` 路径。
 
-默认版本为 0.7.9、构建号 23，可用 `--version` 和 `--build-number` 修改。覆盖更新时，沿用原来的 `--bundle-id`。
+默认版本为 0.8.1、构建号 29，可用 `--version` 和 `--build-number` 修改。覆盖更新时，沿用原来的 `--bundle-id`。
 
 ### 编译 IPA
 
@@ -145,7 +145,7 @@ python3 build.py native --work "$nativeOutput"
 IPA 和日志位于 `$buildRoot` 下：
 
 ```text
-native/output/SilksongNative-0.7.9-unsigned.ipa
+native/output/SilksongNative-0.8.1-unsigned.ipa
 native/logs/
 ```
 
@@ -222,7 +222,7 @@ Documents/
 
 ## 支持与测试范围
 
-当前为 **0.7.9 / build 23 测试版**。
+当前为 **0.8.1 / build 29 测试版**。
 
 | 项目 | 当前范围 |
 | --- | --- |
@@ -238,13 +238,24 @@ Documents/
 
 ## 更新说明
 
-### 开发中
+### 开发中（PR #2）
 
-- 最低部署目标降至 iOS / iPadOS 16.0。
 - 新增屏幕虚拟手柄，可设为自动、始终开启或始终关闭。
+- 支持拖动调整按键与摇杆位置、双指缩放，布局会自动保存。
+- 自动模式忽略传感器与空闲状态更新，切后台时释放虚拟按键和摇杆输入。
+
+### 0.8.1
+
+- 切换应用或失去焦点时自动请求暂停，返回后保持暂停菜单，由玩家手动继续。
+- 重复通知不会恢复游戏；已经打开的暂停菜单或设置子菜单保持原状。
+
+### 0.8.0
+
+- 修复 DualSense（PS5）手柄触摸板按下与松开输入，保留游戏原有的输入和按键绑定逻辑。
 
 ### 0.7.9
 
+- 最低部署目标降至 iOS / iPadOS 16.0。
 - 支持鼠标菜单点击和游戏内按键绑定。
 - 修复鼠标松开事件丢失、绑定后误触菜单的问题。
 - 修复绑定提示的中文字体显示。
