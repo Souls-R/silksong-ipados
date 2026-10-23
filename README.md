@@ -131,7 +131,7 @@ python3 build.py prepare --game-data "$gameData" --unity-data "$unityData" --inp
 
 `prepare` 需要一个尚不存在的输出目录。重新生成工程时，换一个 `nativeOutput` 路径。
 
-默认版本为 0.8.1、构建号 29，可用 `--version` 和 `--build-number` 修改。覆盖更新时，沿用原来的 `--bundle-id`。
+默认版本为 0.8.2、构建号 36，可用 `--version` 和 `--build-number` 修改。覆盖更新时，沿用原来的 `--bundle-id`。
 
 ### 编译 IPA
 
@@ -144,7 +144,7 @@ python3 build.py native --work "$nativeOutput"
 IPA 和日志位于 `$buildRoot` 下：
 
 ```text
-native/output/SilksongNative-0.8.1-unsigned.ipa
+native/output/SilksongNative-0.8.2-unsigned.ipa
 native/logs/
 ```
 
@@ -216,13 +216,13 @@ Documents/
 
 ## 支持与测试范围
 
-当前为 **0.8.1 / build 29 测试版**。
+当前为 **0.8.2 / build 36 测试版**。
 
 | 项目 | 当前范围 |
 | --- | --- |
 | 游戏文件 | Steam macOS 版 1.0.30000 |
 | 构建环境 | Apple Silicon Mac、Unity 6000.0.50f1、Python 3.12、Xcode |
-| 系统要求 | 构建最低目标为 iOS / iPadOS 16.0 |
+| 系统要求 | 构建最低目标为 iOS / iPadOS 15.0 |
 | 实测设备 | iPad Pro 11 英寸（2021，M1） |
 | iPadOS 16 实测 | iPad（M2，8 GB），使用按 [PR #1](https://github.com/Souls-R/silksong-ipados/pull/1) 重新编译的 IPA 测试通过 |
 | 操作方式 | 游戏内使用外接键盘或手柄，支持鼠标按键绑定；部分支持触控 |
@@ -231,6 +231,10 @@ Documents/
 使用鼠标前，请关闭 iPad「设置 → 辅助功能 → 触控 → 辅助触控」，避免左键被系统转换为触屏点击。
 
 ## 更新说明
+
+### 0.8.2
+
+- 最低部署目标降至 iOS / iPadOS 15.0；15.5 用户反馈运行正常。原资源包继续复用。
 
 ### 0.8.1
 
