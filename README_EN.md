@@ -131,7 +131,7 @@ If resource conversion is interrupted, run the same command to resume. Add `--re
 
 `prepare` requires an output directory that does not already exist. Choose a new `nativeOutput` path when regenerating the project.
 
-The default version is 0.8.2, build 36. Change these with `--version` and `--build-number`. Keep the same `--bundle-id` when updating an existing installation.
+The default version is 0.8.3, build 40. Change these with `--version` and `--build-number`. Keep the same `--bundle-id` when updating an existing installation.
 
 ### Build the IPA
 
@@ -144,7 +144,7 @@ python3 build.py native --work "$nativeOutput"
 The IPA and logs are under `$buildRoot`:
 
 ```text
-native/output/SilksongNative-0.8.2-unsigned.ipa
+native/output/SilksongNative-0.8.3-unsigned.ipa
 native/logs/
 ```
 
@@ -216,7 +216,7 @@ Changing the signing account or bundle identifier may prevent an update from rep
 
 ## Support and Testing
 
-Current release: **0.8.2 / build 36 test version**.
+Current release: **0.8.3 / build 40 test version**.
 
 | Item | Current scope |
 | --- | --- |
@@ -231,6 +231,13 @@ Current release: **0.8.2 / build 36 test version**.
 Before using a mouse, turn off **Settings → Accessibility → Touch → AssistiveTouch** on your iPad to prevent left clicks from being converted into screen taps.
 
 ## Release Notes
+
+### 0.8.3
+
+- Fixed Switch controller detection and Minus inventory input, with A to confirm and B to go back; original rebinding remains supported.
+- Fixed mismatches between generic iOS controller controls and inventory bindings; narrowed name matching to reduce third-party misclassification.
+- Corrected DualSense classification to PS5. Existing PS5 bindings are retained; a missing PS5 profile inherits the previous PS4 bindings.
+- Existing resource packs remain compatible. Controller input paths passed replay tests on an iPad; physical Switch and third-party controllers still need testing.
 
 ### 0.8.2
 

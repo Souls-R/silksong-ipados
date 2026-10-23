@@ -42,7 +42,7 @@ public static class NativeInputCompatibility
     }
     static void Describe(UnityEngine.InputSystem.InputDevice device, string state)
     {
-        if (NativePreferences.CompatibilityLogs) Debug.Log("NATIVE_INPUT: " + state + "; layout=" + device.layout + "; product=" + device.description.product + "; interface=" + device.description.interfaceName);
+        if (NativePreferences.CompatibilityLogs) Debug.Log("NATIVE_INPUT: " + state + "; layout=" + device.layout + "; product=" + device.description.product + "; interface=" + device.description.interfaceName + "; nativeStyle=" + NativeControllerIdentity.DetectStyle(device));
     }
     static void SetupKeyboard()
     {

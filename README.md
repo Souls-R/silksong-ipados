@@ -131,7 +131,7 @@ python3 build.py prepare --game-data "$gameData" --unity-data "$unityData" --inp
 
 `prepare` 需要一个尚不存在的输出目录。重新生成工程时，换一个 `nativeOutput` 路径。
 
-默认版本为 0.8.2、构建号 36，可用 `--version` 和 `--build-number` 修改。覆盖更新时，沿用原来的 `--bundle-id`。
+默认版本为 0.8.3、构建号 40，可用 `--version` 和 `--build-number` 修改。覆盖更新时，沿用原来的 `--bundle-id`。
 
 ### 编译 IPA
 
@@ -144,7 +144,7 @@ python3 build.py native --work "$nativeOutput"
 IPA 和日志位于 `$buildRoot` 下：
 
 ```text
-native/output/SilksongNative-0.8.2-unsigned.ipa
+native/output/SilksongNative-0.8.3-unsigned.ipa
 native/logs/
 ```
 
@@ -216,7 +216,7 @@ Documents/
 
 ## 支持与测试范围
 
-当前为 **0.8.2 / build 36 测试版**。
+当前为 **0.8.3 / build 40 测试版**。
 
 | 项目 | 当前范围 |
 | --- | --- |
@@ -231,6 +231,13 @@ Documents/
 使用鼠标前，请关闭 iPad「设置 → 辅助功能 → 触控 → 辅助触控」，避免左键被系统转换为触屏点击。
 
 ## 更新说明
+
+### 0.8.3
+
+- 修复 Switch 手柄识别和减号背包输入，菜单使用 A 确认、B 返回；保留原游戏改键逻辑。
+- 修复通用 iOS 手柄控件与背包绑定不一致的问题，收紧名称匹配规则，减少第三方手柄误分类。
+- 修正 DualSense 的 PS5 分类；已有 PS5 改键保持不变，首次使用 PS5 配置时沿用原 PS4 改键。
+- 原资源包继续复用。手柄输入链路已通过 iPad 模拟设备回放，真实 Switch / 第三方手柄仍需实测。
 
 ### 0.8.2
 
