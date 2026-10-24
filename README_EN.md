@@ -134,7 +134,7 @@ If resource conversion is interrupted, run the same command to resume. Add `--re
 
 `prepare` requires an output directory that does not already exist. Choose a new `nativeOutput` path when regenerating the project.
 
-The default version is 0.8.1, build 29. Change these with `--version` and `--build-number`. Keep the same `--bundle-id` when updating an existing installation.
+The default version is 0.8.3, build 40. Change these with `--version` and `--build-number`. Keep the same `--bundle-id` when updating an existing installation.
 
 ### Build the IPA
 
@@ -147,7 +147,7 @@ python3 build.py native --work "$nativeOutput"
 The IPA and logs are under `$buildRoot`:
 
 ```text
-native/output/SilksongNative-0.8.1-unsigned.ipa
+native/output/SilksongNative-0.8.3-unsigned.ipa
 native/logs/
 ```
 
@@ -219,13 +219,13 @@ Changing the signing account or bundle identifier may prevent an update from rep
 
 ## Support and Testing
 
-Current release: **0.8.1 / build 29 test version**.
+Current release: **0.8.3 / build 40 test version**.
 
 | Item | Current scope |
 | --- | --- |
 | Game files | Steam macOS release 1.0.30000 |
 | Build environment | Apple Silicon Mac, Unity 6000.0.50f1, Python 3.12, Xcode |
-| System requirements | Minimum build target: iOS / iPadOS 16.0 |
+| System requirements | Minimum build target: iOS / iPadOS 15.0 |
 | Tested device | iPad Pro 11-inch (2021, M1) |
 | iPadOS 16 testing | iPad with M2 and 8 GB RAM; reported working with an IPA rebuilt from [PR #1](https://github.com/Souls-R/silksong-ipados/pull/1) |
 | Controls | External keyboard or controller for gameplay, with mouse button binding; partial touch support |
@@ -274,6 +274,17 @@ restart after editing it. Adding plugin DLLs still requires rebuilding.
 Device validation of animations, health bars, scene transitions and memory use is still required.
 
 ## Release Notes
+
+### 0.8.3
+
+- Fixed Switch controller detection and Minus inventory input, with A to confirm and B to go back; original rebinding remains supported.
+- Fixed mismatches between generic iOS controller controls and inventory bindings; narrowed name matching to reduce third-party misclassification.
+- Corrected DualSense classification to PS5. Existing PS5 bindings are retained; a missing PS5 profile inherits the previous PS4 bindings.
+- Existing resource packs remain compatible. Controller input paths passed replay tests on an iPad; physical Switch and third-party controllers still need testing.
+
+### 0.8.2
+
+- Lowered the minimum deployment target to iOS / iPadOS 15.0; reported working on 15.5. Existing resource packs remain compatible.
 
 ### 0.8.1
 

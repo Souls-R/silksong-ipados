@@ -4,6 +4,7 @@ import argparse, json, re
 from patch_original_display import apply as apply_original_display
 from patch_animator_compat import apply as apply_animator_compat
 from patch_mouse_ui import apply as apply_mouse_ui
+from patch_controller_identity import apply as apply_controller_identity
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--cpp',required=True,type=Path)
@@ -53,5 +54,6 @@ report['controller_platform'] = dict(file=controller_path.name, method='InputHan
 report['original_display_menu'] = apply_original_display(args.cpp)
 report['animator_enable_boundary'] = apply_animator_compat(args.cpp)
 report['mouse_ui_boundary'] = apply_mouse_ui(args.cpp)
+report['controller_identity_boundary'] = apply_controller_identity(args.cpp)
 (args.cpp.parent/'native-compatibility-workarounds.json').write_text(json.dumps(report,indent=2))
 print(json.dumps(report,indent=2))

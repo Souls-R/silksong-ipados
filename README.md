@@ -134,7 +134,7 @@ python3 build.py prepare --game-data "$gameData" --unity-data "$unityData" --inp
 
 `prepare` 需要一个尚不存在的输出目录。重新生成工程时，换一个 `nativeOutput` 路径。
 
-默认版本为 0.8.1、构建号 29，可用 `--version` 和 `--build-number` 修改。覆盖更新时，沿用原来的 `--bundle-id`。
+默认版本为 0.8.3、构建号 40，可用 `--version` 和 `--build-number` 修改。覆盖更新时，沿用原来的 `--bundle-id`。
 
 ### 编译 IPA
 
@@ -147,7 +147,7 @@ python3 build.py native --work "$nativeOutput"
 IPA 和日志位于 `$buildRoot` 下：
 
 ```text
-native/output/SilksongNative-0.8.1-unsigned.ipa
+native/output/SilksongNative-0.8.3-unsigned.ipa
 native/logs/
 ```
 
@@ -219,13 +219,13 @@ Documents/
 
 ## 支持与测试范围
 
-当前为 **0.8.1 / build 29 测试版**。
+当前为 **0.8.3 / build 40 测试版**。
 
 | 项目 | 当前范围 |
 | --- | --- |
 | 游戏文件 | Steam macOS 版 1.0.30000 |
 | 构建环境 | Apple Silicon Mac、Unity 6000.0.50f1、Python 3.12、Xcode |
-| 系统要求 | 构建最低目标为 iOS / iPadOS 16.0 |
+| 系统要求 | 构建最低目标为 iOS / iPadOS 15.0 |
 | 实测设备 | iPad Pro 11 英寸（2021，M1） |
 | iPadOS 16 实测 | iPad（M2，8 GB），使用按 [PR #1](https://github.com/Souls-R/silksong-ipados/pull/1) 重新编译的 IPA 测试通过 |
 | 操作方式 | 游戏内使用外接键盘或手柄，支持鼠标按键绑定；部分支持触控 |
@@ -310,6 +310,17 @@ Documents/
 以上为实验支持，仍需实机验证皮肤动画、血条、场景切换和内存表现。
 
 ## 更新说明
+
+### 0.8.3
+
+- 修复 Switch 手柄识别和减号背包输入，菜单使用 A 确认、B 返回；保留原游戏改键逻辑。
+- 修复通用 iOS 手柄控件与背包绑定不一致的问题，收紧名称匹配规则，减少第三方手柄误分类。
+- 修正 DualSense 的 PS5 分类；已有 PS5 改键保持不变，首次使用 PS5 配置时沿用原 PS4 改键。
+- 原资源包继续复用。手柄输入链路已通过 iPad 模拟设备回放，真实 Switch / 第三方手柄仍需实测。
+
+### 0.8.2
+
+- 最低部署目标降至 iOS / iPadOS 15.0；15.5 用户反馈运行正常。原资源包继续复用。
 
 ### 0.8.1
 
